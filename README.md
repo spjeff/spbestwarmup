@@ -31,11 +31,11 @@ SCHTASKS /RUN /TN "SPBestWarmup"
 
 ## Screenshots
 
-Run with Scheduled Task present
+* Run with Scheduled Task present
 ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/1.png)
-Run without Scheduled Task (reminder how to create)
+* Run without Scheduled Task (reminder how to create)
 ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/1.png)
-Install to create Scheduled Task
+* Install to create Scheduled Task
 ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/1.png)
 
 ## Note
