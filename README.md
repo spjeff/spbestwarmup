@@ -32,11 +32,13 @@ SCHTASKS /RUN /TN "SPBestWarmup"
 ## Screenshots
 
 * Run with Scheduled Task present
-![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/1.png)
+* ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/1.png)
+
 * Run without Scheduled Task (reminder how to create)
-![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/2.png)
+* ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/2.png)
+
 * Install to create Scheduled Task
-![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/3.png)
+* ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/3.png)
 
 ## Note
 * Running this with a different service account than farm might require you to first grant PowerShell access. This will ensure the service account has access to run "Get-SPWebApplication" and read ConfigDB for which URLs to load. http://technet.microsoft.com/en-us/magazine/gg490648.aspx
