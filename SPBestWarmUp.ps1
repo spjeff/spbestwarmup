@@ -139,9 +139,10 @@ Function GetExternalUrls {
 Function GetProjectServerUrls {
     # Warm up any Project Server instances
 	WriteScreenLog -Message "Collecting Project PWA URLs..." -printTime
-    foreach ($extUrl in $Url) {
-        $global:siteUrls += $extUrl
-		"Added {0}" -f $extUrl | Write-Verbose
+	$pwas = Get-SPProjectWebInstance
+    foreach ($pwa in $pwas) {
+        $global:siteUrls += $pwa.Url.ToString()
+		"Added {0}" -f $pwa.Url | Write-Verbose
     }
 }
 Function NavigateTo {
@@ -160,11 +161,11 @@ Function NavigateTo {
         if($FetchStaticContent -eq $True) {
             
             $imageCounter = 0
-            $Images = $webReturn.Images | Select-Object src -Unique
-            foreach($image in $Images) {
+            $images = $webReturn.Images | Select-Object src -Unique
+            foreach($image in $images) {
                 $imageUrl = $url + $image.src
                 WriteScreenLog -Message "Opening $imageUrl" -Type Info -printTime
-                Write-Progress -Activity "Fetching images" -status $imageUrl -Id 2 -ParentId 1 -PercentComplete (($imageCounter/$Images.Count)*100)
+                Write-Progress -Activity "Fetching images" -status $imageUrl -Id 2 -ParentId 1 -PercentComplete (($imageCounter/$images.Count)*100)
 
                 $imageReturn = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $imageUrl -TimeoutSec 120
                 
@@ -208,9 +209,9 @@ Function NavigateTo {
     }
 }
 function WriteScreenLog {
-## Write a log entry to the screen
-## Usage:
-##        WriteScreenLog -Message "Message text" [-Type OK|Warning|Error|Info|Verbose] [-printTime]
+# Write a log entry to the screen
+# Usage:
+#        WriteScreenLog -Message "Message text" [-Type OK|Warning|Error|Info|Verbose] [-printTime]
 
 	Param (
 		[Parameter(Mandatory=$True,Position=0)]
@@ -244,8 +245,6 @@ function WriteScreenLog {
 	}
 }
 Function WarmUp {
-	# Core WarmUp
-		
 	# Load the SharePoint PowerShell cmdlets
     "Testing for the Microsoft.SharePoint.PowerShell module" | Write-Verbose
 	if (!(Get-PSSnapin "Microsoft.SharePoint.PowerShell" -ErrorAction SilentlyContinue))
@@ -254,6 +253,7 @@ Function WarmUp {
 		Add-PSSNapin Microsoft.SharePoint.Powershell
 	}
 
+	# Core WarmUp
 	$global:siteUrls = @()
 	GetWebApplicationUrls
 	GetServiceApplicationUrls
@@ -265,6 +265,7 @@ Function WarmUp {
         GetProjectServerUrls
     }
 
+	# Display progres bar
     $progressCounter = 0
 	foreach ($target in $global:siteUrls) {
         Write-Progress -Activity "Fetching webpages from SharePoint server" -status $target -Id 1 -PercentComplete (($progressCounter/$global:siteUrls.Count)*100)
