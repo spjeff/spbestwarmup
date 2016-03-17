@@ -24,29 +24,29 @@
     .\SPBestWarmUp.ps1 -Install
     Installs the script in the Windows scheduler
 .EXAMPLE
-    .\SPBestWarmUp.ps1 -Transcript c:\Temp\log.txt
+    .\SPBestWarmUp.ps1 -Transcript C:\temp\log.txt
     Creates the translog file at the given path
 .EXAMPLE
     .\SPBestWarmUp.ps1 -Url "http://domainA.tld","https://domainB.tld"
     Adds the given urls to the list that wil be fetched when the script is executed.
 .NOTES  
     File Name     : SPBestWarmUp.ps1
-    Author        : Jeff Jones - @spjeff
+    Author        : Jeff Jones  - @spjeff
                   : Hagen Deike - @hd_ka
-    Version       : 2.0.9 (Stockholm)
-	Last Modified : 11-09-2015
+    Version       : 2.0.12
+	Last Modified : 03-16-2016
 .LINK
-	https://spbestwarmup.codeplex.com/documentation
+	https://www.github.com/spjeff/spbestwarmup/doc
 #>
 
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory=$False, Position=0, ValueFromPipeline=$false, HelpMessage='A collection of Url that will be fetched too')]
+    [Parameter(Mandatory=$False, Position=0, ValueFromPipeline=$false, HelpMessage='A collection of URLs that will be fetched too')]
     [ValidateNotNullOrEmpty()]
     [ValidatePattern("https?:\/\/\D+")]
     [string[]]$Url,
 
-	[Parameter(Mandatory=$False, Position=1, ValueFromPipeline=$false, HelpMessage='Use the Install parameter to install the script to the Windows scheduler')]
+	[Parameter(Mandatory=$False, Position=1, ValueFromPipeline=$false, HelpMessage='Use the Install parameter to install the script to the Windows Task Scheduler')]
 	[Alias("i")]
     [switch]$Install,
 
@@ -55,21 +55,24 @@ param (
 
 	[Parameter(Mandatory=$False, Position=3, ValueFromPipeline=$false, HelpMessage='Define the path where the transcript should be logged')]
     [ValidateNotNullOrEmpty()]
-	[string]$Transcript
+	[string]$Transcript,
+    
+    [Parameter(Mandatory=$False, Position=4, ValueFromPipeline=$false, HelpMessage='Warmup a installed Project Server too')]
+    [switch]$ProjectServer
 )
 
 Function Installer {
-# Add to Task Scheduler
+	# Add to Task Scheduler
 
+	# Current user
 	WriteScreenLog -Message "Installing to Task Scheduler..." -printTime
 	$user = $ENV:USERDOMAIN+"\"+$ENV:USERNAME
 	WriteScreenLog -Message "Current User: $user" -printTime
 	
-	# Attempt to detect password from IIS Pool (if current user is local admin and farm account)
-	$appPools = Get-WmiObject -Namespace "root\MicrosoftIISV2" -Class "IIsApplicationPoolSetting" | Select WAMUserName, WAMUserPass
-	Write-Verbose -Message ""Found $appPools.Count Application Pool""
-
-	foreach ($pool in $appPools) {			
+	# Attempt to detect password from IIS Pool (if current user is local admin)
+	$pools = Get-WmiObject -Namespace "root\MicrosoftIISV2" -Class "IIsApplicationPoolSetting" | Select-Object WAMUserName, WAMUserPass
+	Write-Verbose -Message "Found $appPools.Count Application Pool"
+	foreach ($pool in $pools) {			
 		if ($pool.WAMUserName -like $user) {
 			$pass = $pool.WAMUserPass
 			if ($pass) {
@@ -80,22 +83,18 @@ Function Installer {
 	
 	# Manual input if auto detect failed
 	if (!$pass) {
-		$pass = Read-Host "Enter password for $user "
+		$pass = Read-Host "Enter password for $user :"
 	}
 	
-	# Create Task
+	# Create Scheduled Task
 	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$global:path'"""
 	schtasks /create /tn "SPBestWarmUp" /ru $user /rp $pass /rl highest /sc daily /st 01:00 /ri 60 /du 24:00 /tr $cmd
 	WriteScreenLog -Message "Task created" -Type OK -printTime
-	Write-Host
 }
 Function GetWebApplicationUrls {
-	$webApplications = Get-SPWebApplication -IncludeCentralAdministration
-	$webApplications |? {$_.IsAdministrationWebApplication -eq $true} |% {$caTitle = Get-SPWeb $_.Url | Select Title}
-
-	# Warm up SharePoint web applications
+	# Warm up Web Applications
 	WriteScreenLog -Message "Collecting Web Applications..." -printTime
-
+	$webApplications = Get-SPWebApplication -IncludeCentralAdministration
 	foreach ($webApplication in $webApplications) {
         "Processing web application {0}" -f $webApplication.Url | Write-Verbose
 		$global:siteUrls += $webApplication.Url
@@ -106,14 +105,12 @@ Function GetWebApplicationUrls {
 }
 Function GetServiceApplicationUrls {
 	# Warm up Service Applications
+	WriteScreenLog -Message "Collecting Service Applications..." -printTime
 	$serviceApplications = Get-SPServiceApplication
-    WriteScreenLog -Message "Collecting Service Applications..." -printTime
-
-	foreach($serviceApplication in $serviceApplications) {
-
+	foreach ($serviceApplication in $serviceApplications) {
         "Processing service application {0} Id: {1} " -f $serviceApplication.DisplayName, $serviceApplication.id | Write-Verbose
-		foreach($endpoint in $serviceApplication.Endpoints) {
-            foreach($listenUri in $endpoint.ListenUris) {
+		foreach ($endpoint in $serviceApplication.Endpoints) {
+            foreach ($listenUri in $endpoint.ListenUris) {
 				# Remove all endpoints not matching http[s]
 				if($listenUri.AbsoluteUri -match "https?:\/\/") {
 					$global:siteUrls += $listenUri.AbsoluteUri -replace "\/https?", ""
@@ -125,18 +122,26 @@ Function GetServiceApplicationUrls {
 Function GetHostNameSiteCollectionsUrls {
 	# Warm up Host Name Site Collections (HNSC)
 	WriteScreenLog -Message "Collecting Host Name Site Collections (HNSC)..." -printTime
-	$hnsc = Get-SPSite -Limit All |? {$_.HostHeaderIsSiteName -eq $true} | Select Url
-
+	$hnsc = Get-SPSite -Limit All |Where-Object {$_.HostHeaderIsSiteName -eq $true} | Select-Object Url
 	foreach ($sc in $hnsc) {
-        "Adding {0} to the collection of URLs to fetch" -f $sc.Url | Write-Verbose
 		$global:siteUrls += $sc.Url
+		"Added {0}" -f $sc.Url | Write-Verbose
 	}
 }
 Function GetExternalUrls {
-	WriteScreenLog -Message "Collecting external urls..." -printTime
-    foreach($extUrl in $Url) {
-        "Adding {0} to the collection of URLs to fetch" -f $extUrl | Write-Verbose
+	# Warm up any external URLs provided on cmd line
+	WriteScreenLog -Message "Collecting external URLs..." -printTime
+    foreach ($extUrl in $Url) {
         $global:siteUrls += $extUrl
+		"Added {0}" -f $extUrl | Write-Verbose
+    }
+}
+Function GetProjectServerUrls {
+    # Warm up any Project Server instances
+	WriteScreenLog -Message "Collecting Project PWA URLs..." -printTime
+    foreach ($extUrl in $Url) {
+        $global:siteUrls += $extUrl
+		"Added {0}" -f $extUrl | Write-Verbose
     }
 }
 Function NavigateTo {
@@ -147,7 +152,7 @@ Function NavigateTo {
 
 	WriteScreenLog -Message "Opening $url" -Type Info -printTime
 	try {
-        $webReturn = Invoke-WebRequest -UseDefaultCredentials -Uri $url -TimeoutSec 120
+        $webReturn = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $url -TimeoutSec 120
 	    if($webReturn.StatusDescription -eq "OK") {
             WriteScreenLog -Message $webReturn.StatusCode -Type Info -printTime		    
             WriteScreenLog -Message "Success..." -Type OK -printTime
@@ -155,13 +160,13 @@ Function NavigateTo {
         if($FetchStaticContent -eq $True) {
             
             $imageCounter = 0
-            $Images = $webReturn.Images | select src -Unique
+            $Images = $webReturn.Images | Select-Object src -Unique
             foreach($image in $Images) {
                 $imageUrl = $url + $image.src
                 WriteScreenLog -Message "Opening $imageUrl" -Type Info -printTime
                 Write-Progress -Activity "Fetching images" -status $imageUrl -Id 2 -ParentId 1 -PercentComplete (($imageCounter/$Images.Count)*100)
 
-                $imageReturn = Invoke-WebRequest -UseDefaultCredentials -Uri $imageUrl -TimeoutSec 120
+                $imageReturn = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $imageUrl -TimeoutSec 120
                 
                 $imageCounter++
 	            if($imageReturn.StatusDescription -eq "OK") {
@@ -171,13 +176,13 @@ Function NavigateTo {
             }
 
             $scriptCounter = 0
-            $Scripts = $webReturn.Scripts | select src -Unique
+            $Scripts = $webReturn.Scripts | Select-Object src -Unique
             foreach($script in $Scripts) {
                 $scriptUrl = $url + $script.src
                 WriteScreenLog -Message "Opening $scriptUrl" -Type Info -printTime
                 Write-Progress -Activity "Fetching scripts" -status $scriptUrl -Id 2 -ParentId 1 -PercentComplete (($scriptCounter/$Scripts.Count)*100)
                 
-                $scriptReturn = Invoke-WebRequest -UseDefaultCredentials -Uri $scriptUrl -TimeoutSec 120
+                $scriptReturn = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $scriptUrl -TimeoutSec 120
                 
                 $scriptCounter++
         	    if($scriptReturn.StatusDescription -eq "OK") {
@@ -203,7 +208,6 @@ Function NavigateTo {
     }
 }
 function WriteScreenLog {
-##
 ## Write a log entry to the screen
 ## Usage:
 ##        WriteScreenLog -Message "Message text" [-Type OK|Warning|Error|Info|Verbose] [-printTime]
@@ -232,21 +236,19 @@ function WriteScreenLog {
         [Console]::SetCursorPosition($screenXpos, $Host.UI.RawUI.CursorPosition.Y-1)
 	}
     switch ($Type) {
-		"OK" {Write-Host -BackgroundColor Green -ForegroundColor Black  "    OK    "}
-		"Warning" {Write-Host -BackgroundColor Yellow -ForegroundColor Black "  Warning "}
-		"Error" {Write-Host -ForegroundColor Yellow -BackgroundColor Red  "   Error  "}
-		"Info" {Write-Host -BackgroundColor $Host.UI.RawUI.ForegroundColor -ForegroundColor $Host.UI.RawUI.BackgroundColor "   Info   "}
-		"Verbose" {Write-Host -BackgroundColor $Host.UI.RawUI.ForegroundColor -ForegroundColor $Host.UI.RawUI.BackgroundColor "  Verbose "}
+		"OK" {Write-Output -BackgroundColor Green -ForegroundColor Black  "    OK    "}
+		"Warning" {Write-Output -BackgroundColor Yellow -ForegroundColor Black "  Warning "}
+		"Error" {Write-Output -ForegroundColor Yellow -BackgroundColor Red  "   Error  "}
+		"Info" {Write-Output -BackgroundColor $Host.UI.RawUI.ForegroundColor -ForegroundColor $Host.UI.RawUI.BackgroundColor "   Info   "}
+		"Verbose" {Write-Output -BackgroundColor $Host.UI.RawUI.ForegroundColor -ForegroundColor $Host.UI.RawUI.BackgroundColor "  Verbose "}
 	}
 }
 Function WarmUp {
-##
-## The Main WarmUp function
-##
+	# Core WarmUp
 		
 	# Load the SharePoint PowerShell cmdlets
     "Testing for the Microsoft.SharePoint.PowerShell module" | Write-Verbose
-	if ((Get-PSSnapin "Microsoft.SharePoint.PowerShell" -ea silentlycontinue) -eq $null)
+	if (!(Get-PSSnapin "Microsoft.SharePoint.PowerShell" -ErrorAction SilentlyContinue))
 	{
 		WriteScreenLog -Message "Loading the SharePoint PowerShell module" -printTime
 		Add-PSSNapin Microsoft.SharePoint.Powershell
@@ -259,10 +261,13 @@ Function WarmUp {
     "Adding topology.svc to the collection of url to fetch" | Write-Verbose
 	$global:siteUrls += "http://localhost:32843/Topology/topology.svc"
     GetExternalUrls
+    if ($ProjectServer){
+        GetProjectServerUrls
+    }
 
     $progressCounter = 0
-	foreach($target in $global:siteUrls) {
-        Write-Progress -Activity "Fetching webpages from SharePoint server" -status $target -Id 1 -PercentComplete (($progressCounter/$Global:siteUrls.Count)*100)
+	foreach ($target in $global:siteUrls) {
+        Write-Progress -Activity "Fetching webpages from SharePoint server" -status $target -Id 1 -PercentComplete (($progressCounter/$global:siteUrls.Count)*100)
         NavigateTo -url $target
         Write-Progress -Activity "Done..." -Id 1 -PercentComplete 100 -Completed
         $progressCounter++
@@ -273,28 +278,26 @@ Function CollectSystemInformation {
         "PowerShell Version: {0}" -f $Host.Version | Write-Verbose
         "PowerShell Culture: {0}" -f $Host.CurrentCulture | Write-Verbose
         "PowerShell ExecutionPolicy: {0}" -f (Get-ExecutionPolicy) | Write-Verbose
-		gwmi win32_operatingsystem | % caption
+		Get-WmiObject win32_operatingsystem | ForEach-Object caption
     }
 }
 
-##
-## Main
-##
+# Verbose system info
 if ($PSBoundParameters['Verbose']) {
     CollectSystemInformation
 }
 
-# Load the EventLog
-if ((Get-EventLog -LogName Application -Source "SPBestWarmUp" -ea silentlycontinue) -eq $null)
+# Load EventLog
+if (!(Get-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue))
 {
     New-EventLog -LogName Application -Source "SPBestWarmUp"
 	WriteScreenLog -Message "Windows EventLog for SPBestWarmUp created..." -printTime
 }
 
-#if ($Transcript -and (Test-Path -Path $Transcript -PathType Container) -replace "\\\w+.\w+\Z","") {
+# Start Transcript
 if ($Transcript) {
     Write-Verbose -Message "Starting Transscript"
-    Start-Transcript -Path $Transcript -Force # See issue 22023
+    Start-Transcript -Path $Transcript -Force
 }
 WriteScreenLog -Message "SPBestWarmUp started..." -printTime
 
@@ -308,27 +311,32 @@ If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
 }
 
 If (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+	# Quit if not elevated
     WriteScreenLog -Message "You do not have Administration rights! Please, restart the PowerShell with Administrator rights" -Type Error -printTime
     break
 } else {
-    # Start the Warm up process
+    # Start the WarmUp process
     $global:path = $MyInvocation.MyCommand.Path
-    $tasks = schtasks /query /fo csv | ConvertFrom-Csv
-    $spb = $tasks |? {$_.TaskName -eq "\SPBestWarmUp"}
+    $schtasks = schtasks /query /fo csv | ConvertFrom-Csv
+    $schtask = $schtasks | Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
     
-	if (!$spb -and !$Install) {
+	# Reminder if not scheduled
+	if (!$schtask -and !$Install) {
 	    WriteScreenLog -Message "To install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install """ -Type Info -printTime
     }
 
     if ($Install) {
+		# Install to Task Scheduler
 	    Installer
-        Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId 2 -Message "The script was installed to thw Windows scheduler successfully"
+        Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId 2 -Message "The script was installed to the Windows scheduler successfully"
     } else {
+		# Run WarmUp
         WarmUp
         Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId 1 -Message "The script has run successfully"
     }
 }
 
+# Stop Transcript
 if ($Transcript) {
 	Stop-Transcript
 }
