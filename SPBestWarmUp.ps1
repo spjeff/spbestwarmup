@@ -249,7 +249,7 @@ Function FetchResources($baseUrl, $type, $resources) {
 
 Function ShowW3WP() {
 	$mb = [Math]::Round((Get-Process w3wp | Select pm | Measure pm -Sum).Sum/1MB)
-	Write-Warning "W3WP total = $mb"
+	Write-Warning "Total W3WP = $mb MB"
 }
 
 # Main
