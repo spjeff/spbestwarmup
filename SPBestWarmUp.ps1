@@ -168,14 +168,14 @@ Function WarmUp() {
 
 Function NavigateTo([string] $url, [int] $delayTime = 500) {
     if ($url.ToUpper().StartsWith("HTTP")) {
-        Write-Output "  Navigating to $url"
+        Write-Host "  $url" -NoNewLine
 	    if ($webrequest) {
             # WebRequest command line    
             try {
 				$wr = Invoke-WebRequest -Uri $url -UseBasicParsing -UseDefaultCredentials -TimeoutSec 120
-                Write-Output $wr.StatusCode
 				FetchResources $url "Images" $wr.Images
 				FetchResources $url "Scripts" $wr.Scripts
+				
             } catch {}
         } else {
 		    # Internet Explorer
@@ -195,6 +195,7 @@ Function NavigateTo([string] $url, [int] $delayTime = 500) {
 		    }
 		    IEWaitForPage $delayTime
 	    }
+		Write-Host "."
     }
 }
 
@@ -242,8 +243,13 @@ Function FetchResources($baseUrl, $type, $resources) {
 		
 		# Execute
 		$scriptReturn = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $scriptUrl -TimeoutSec 120
-		Write-Output $scriptReturn.StatusCode
+		Write-Host "." -NoNewLine
 	}
+}
+
+Function ShowW3WP() {
+	$mb = [Math]::Round((Get-Process w3wp | Select pm | Measure pm -Sum).Sum/1MB)
+	Write-Warning "W3WP total = $mb"
 }
 
 # Main
@@ -265,5 +271,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     if ($install) {
 	    Installer
     }
+	ShowW3WP
     WarmUp
+	ShowW3WP
 }
