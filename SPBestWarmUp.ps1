@@ -27,8 +27,8 @@
     File Name     : SPBestWarmUp.ps1
     Author        : Jeff Jones  - @spjeff
 					Hagen Deike - @hd_ka
-    Version       : 2.1
-	Last Modified : 03-18-2016
+    Version       : 2.11
+	Last Modified : 03-20-2016
 
 .LINK
 	http://spbestwarmup.codeplex.com/
@@ -113,9 +113,24 @@ Function WarmUp() {
 	Get-SPServiceApplication |% {$_.EndPoints |% {$_.ListenUris |% {NavigateTo $_.AbsoluteUri}}}
 
     # Warm up Project Server
+	Write-Output "Opening Project Server PWAs..."
     if ((Get-Command Get-SPProjectWebInstance -ErrorAction SilentlyContinue).Count -gt 0) {
-        Get-SPProjectWebInstance |% {NavigateTo $_.Url}
-    }
+        Get-SPProjectWebInstance |% {
+			# Thanks to Eugene Pavlikov for the snippet
+			$url = ($_.Url).AbsoluteUri + "/"
+		
+			NavigateTo $url
+			NavigateTo $url + "_layouts/viewlsts.aspx"
+			NavigateTo $url + "_vti_bin/UserProfileService.asmx"
+			NavigateTo $url + "_vti_bin/sts/spsecuritytokenservice.svc"
+			NavigateTo $url + "Projects.aspx"
+			NavigateTo $url + "Approvals.aspx"
+			NavigateTo $url + "Tasks.aspx"
+			NavigateTo $url + "Resources.aspx"
+			NavigateTo $url + "ProjectBICenter/Pages/Default.aspx"
+			NavigateTo $url + "_layouts/15/pwa/Admin/Admin.aspx"
+		}
+	}
 
 	# Warm up Topology
 	NavigateTo "http://localhost:32843/Topology/topology.svc"
