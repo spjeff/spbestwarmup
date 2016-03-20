@@ -268,7 +268,7 @@ Function ShowW3WP() {
 }
 
 # Main
-Write-Output "SPBestWarmUp v2.1  (last updated 03-18-2016)`n------`n"
+Write-Output "SPBestWarmUp v2.11  (last updated 03-20-2016)`n------`n"
 
 # Check Permission Level
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
