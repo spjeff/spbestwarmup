@@ -35,7 +35,7 @@
     Author        : Jeff Jones  - @spjeff
 					Hagen Deike - @hd_ka
     Version       : 2.2
-	Last Modified : 03-20-2016
+	Last Modified : 03-21-2016
 
 .LINK
 	http://spbestwarmup.codeplex.com/
@@ -216,7 +216,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     if (!$spb -and !$install) {
 	    Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
     }
-    if ($install || $installfarm) {
+    if ($install -or $installfarm) {
 		Installer
     }
 	
