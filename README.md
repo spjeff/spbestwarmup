@@ -11,7 +11,7 @@ I used several different warmup scripts over the years. They all worked OK but e
 * Enable trigger conditions
 
 ## Key Features
-* Supports both SharePoint 2010 and 2013
+* Supports SharePoint 2010, 2013, and 2016
 * Supports custom page URLs
 * Automatically detects all Web Application URLs
 * Downloads full page resources (CSS, JS, images) not just HTML
