@@ -6,7 +6,7 @@
     Loads the full page so resources like CSS, JS, and images are included.  Please modify lines 85-105
 	to suit your portal content design (popular URLs, custom pages, etc.)
     
-	Comments and suggestions always welcome!  Please, use the dicussions or issues panel at the project page.
+	Comments and suggestions always welcome!  Please, use the issues panel at the project page.
 
 .PARAMETER url
 	Typing "SPBestWarmUp.ps1 -install" will create a local Task Scheduler job under credentials of the
