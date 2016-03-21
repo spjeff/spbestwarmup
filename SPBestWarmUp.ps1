@@ -1,4 +1,4 @@
-#requires -version 3.0
+﻿#requires -version 3.0
 <#
 .SYNOPSIS  
     Warm up SharePoint IIS W3WP memory cache by loading pages from Internet Explorer or WebRequest
@@ -18,6 +18,12 @@
 	Typing "SPBestWarmUp.ps1 -install" will create a local Task Scheduler job under credentials of the
 	current user.  Job runs every 60 minutes on the hour to help automatically populate cache.  
 	Keeps cache full even after IIS daily recycle, WSP deployment, reboot, or other system events.
+
+.PARAMETER installfarm
+	Typing "SPBestWarmUp.ps1 -farminstall" will create a Task Scheduler job on all machines in the farm.
+
+.PARAMETER uninstall
+	Typing "SPBestWarmUp.ps1 -uninstall" will remove Task Scheduler job from all machines in the farm.
 	
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -url "http://domainA.tld","http://domainB.tld"
@@ -29,6 +35,10 @@
 .EXAMPLE
     .\SPBestWarmUp.ps1 -f
 	.\SPBestWarmUp.ps1 -installfarm
+
+.EXAMPLE
+    .\SPBestWarmUp.ps1 -u
+	.\SPBestWarmUp.ps1 -uninstall
 
 	
 .NOTES  
@@ -113,8 +123,8 @@ Function Installer() {
 				$drive = $dest.substring(0,1)
 				$match =  Get-CimInstance -Class Win32_LogicalDisk |Where-Object {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
 				if ($match) {
-					$dest = "\\" + $_ + "\" + $dest.substring(0,1) + "$" + $dest.substring(2,$dest.length-2)
-					mkdir (Split-Path $dest) -ErrorAction SilentlyContinue
+					$dest = "\\" + $_ + "\" + $drive + "$" + $dest.substring(2,$dest.length-2)
+					mkdir (Split-Path $dest) -ErrorAction SilentlyContinue | Out-Null
 					Copy-Item $cmdpath $dest -Confirm:$false
 				}
 			}
@@ -134,6 +144,7 @@ Function WarmUp() {
 
     # Warm up SharePoint web applications
 	Write-Output "Opening Web Applications..."
+    $was = (Get-SPWebApplication -IncludeCentralAdministration)
 	foreach ($wa in $was) {
 		$url = $wa.Url
 		NavigateTo $url
@@ -181,15 +192,17 @@ Function NavigateTo([string] $url) {
     if ($url.ToUpper().StartsWith("HTTP")) {
         Write-Host "  $url" -NoNewLine
 		# WebRequest command line
-			try {
-				$wr = Invoke-WebRequest -Uri $url -UseBasicParsing -UseDefaultCredentials -TimeoutSec 120
-				FetchResources $url $wr.Images
-				FetchResources $url $wr.Scripts
-			} catch {
-				$httpCode = $_.Exception.Response.StatusCode.Value__
-				Write-Error $httpCode
-			}
-		Write-Host "."
+		try {
+			$wr = Invoke-WebRequest -Uri $url -UseBasicParsing -UseDefaultCredentials -TimeoutSec 120
+			FetchResources $url $wr.Images
+			FetchResources $url $wr.Scripts
+            Write-Host "."
+		} catch {
+			$httpCode = $_.Exception.Response.StatusCode.Value__
+            if ($httpCode) {
+			    Write-Host "   [$httpCode]" -Fore Yellow
+            }
+		}
     }
 }
 
@@ -217,7 +230,7 @@ Function FetchResources($baseUrl, $resources) {
 		$counter++
 		
 		# Execute
-		Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120
+		$resp = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120
 		Write-Host "." -NoNewLine
 	}
 }
@@ -237,11 +250,14 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
     break
 } else {
+    # Snapin
+    Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
+
     # Task Scheduler
     $cmdpath = $MyInvocation.MyCommand.Path
     $tasks = schtasks /query /fo csv | ConvertFrom-Csv
     $spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
-    if (!$spb -and !$install) {
+    if (!$spb -and !$install -and !$installfarm) {
 	    Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
     }
     if ($install -or $installfarm -or $uninstall) {
