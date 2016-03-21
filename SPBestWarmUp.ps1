@@ -201,7 +201,9 @@ Function NavigateTo([string] $url) {
 			$httpCode = $_.Exception.Response.StatusCode.Value__
             if ($httpCode) {
 			    Write-Host "   [$httpCode]" -Fore Yellow
-            }
+            } else {
+				Write-Host " "
+			}
 		}
     }
 }
