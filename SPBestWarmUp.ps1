@@ -55,7 +55,11 @@ param (
 	
 	[Parameter(Mandatory=$False, Position=2, ValueFromPipeline=$false, HelpMessage='Use -installfarm -f parameter to add script to Windows Task Scheduler on all farm machines')]
 	[Alias("f")]
-    [switch]$installfarm
+    [switch]$installfarm,
+	
+	[Parameter(Mandatory=$False, Position=3, ValueFromPipeline=$false, HelpMessage='Use -uninstall -u parameter to remove Windows Task Scheduler job')]
+	[Alias("u")]
+    [switch]$uninstall
 )
 
 Function Installer() {
@@ -84,19 +88,39 @@ Function Installer() {
 	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$global:path -webrequest'"""
 	
 	# Target machines
-	if ($installfarm) {
+	$machines = @()
+	if ($installfarm -or $uninstall) {
 		# Create farm wide on remote machines
 		foreach ($srv in (Get-SPServer |? {$_.Role -ne "Invalid"})) {
 			$machines += $srv.Address
 		}
 	} else {
 		# Create local on current machine
-		$machines = "localhost"
+		$machines += "localhost"
 	}
 	$machines |% {
-		Write-Output "SCHTASKS CREATE on $_"
-		schtasks /s $_ /create /tn "SPBestWarmUp" /ru $user /rp $pass /rl highest /sc daily /st 01:00 /ri 60 /du 24:00 /tr $cmd
-		Write-Host "  [OK]" -Fore Green
+		if ($uninstall) {
+			# Delete task
+			Write-Output "SCHTASKS DELETE on $_"
+			schtasks /s $_ /delete /tn "SPBestWarmUp" /f
+			Write-Host "  [OK]" -Fore Green
+		} else {
+			# Copy local file to remote UNC path machine
+			Write-Output "SCHTASKS CREATE on $_"
+			if ($_ -ne "localhost" -and $_ -ne $ENV:COMPUTERNAME) {
+				$dest = $global:path
+				$drive = $dest.substring(0,1)
+				$match =  Get-WmiObject -class win32_logicaldisk |? {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
+				if ($match) {
+					$dest = "\\" + $_ + "\" + $dest.substring(0,1) + "$" + $dest.substring(2,$dest.length-2)
+					mkdir (Split-Path $dest) -ErrorAction SilentlyContinue
+					Copy-Item $global:path $dest -Confirm:$false
+				}
+			}
+			# Create task
+			schtasks /s $_ /create /tn "SPBestWarmUp" /ru $user /rp $pass /rl highest /sc daily /st 01:00 /ri 60 /du 24:00 /tr $cmd /f
+			Write-Host "  [OK]" -Fore Green
+		}
 	}
 }
 
@@ -129,15 +153,15 @@ Function WarmUp() {
 			$url = ($_.Url).AbsoluteUri + "/"
 		
 			NavigateTo $url
-			NavigateTo $url + "_layouts/viewlsts.aspx"
-			NavigateTo $url + "_vti_bin/UserProfileService.asmx"
-			NavigateTo $url + "_vti_bin/sts/spsecuritytokenservice.svc"
-			NavigateTo $url + "Projects.aspx"
-			NavigateTo $url + "Approvals.aspx"
-			NavigateTo $url + "Tasks.aspx"
-			NavigateTo $url + "Resources.aspx"
-			NavigateTo $url + "ProjectBICenter/Pages/Default.aspx"
-			NavigateTo $url + "_layouts/15/pwa/Admin/Admin.aspx"
+			NavigateTo ($url + "_layouts/viewlsts.aspx")
+			NavigateTo ($url + "_vti_bin/UserProfileService.asmx")
+			NavigateTo ($url + "_vti_bin/sts/spsecuritytokenservice.svc")
+			NavigateTo ($url + "Projects.aspx")
+			NavigateTo ($url + "Approvals.aspx")
+			NavigateTo ($url + "Tasks.aspx")
+			NavigateTo ($url + "Resources.aspx")
+			NavigateTo ($url + "ProjectBICenter/Pages/Default.aspx")
+			NavigateTo ($url + "_layouts/15/pwa/Admin/Admin.aspx")
 		}
 	}
 
@@ -201,7 +225,7 @@ Function ShowW3WP() {
 }
 
 # Main
-Write-Output "SPBestWarmUp v2.11  (last updated 03-20-2016)`n------`n"
+Write-Output "SPBestWarmUp v2.11  (last updated 03-21-2016)`n------`n"
 
 # Check Permission Level
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
@@ -209,16 +233,19 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
     break
 } else {
-    # Task Scheduler support
+    # Task Scheduler
     $global:path = $MyInvocation.MyCommand.Path
     $tasks = schtasks /query /fo csv | ConvertFrom-Csv
     $spb = $tasks |? {$_.TaskName -eq "\SPBestWarmUp"}
     if (!$spb -and !$install) {
 	    Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
     }
-    if ($install -or $installfarm) {
+    if ($install -or $installfarm -or $uninstall) {
 		Installer
     }
+	if ($uninstall) {
+		break
+	}
 	
 	# Core
 	ShowW3WP
