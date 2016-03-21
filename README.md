@@ -1,47 +1,52 @@
 ## Project Description
 Tired of waiting for SharePoint pages to load? Want something easy to support? That works on all versions? This warmup script is for you!
 
-I used several different warmup scripts over the years. They all worked OK but each seemed to lack one or two features so I decided to create one for myself. Hopefully you find it useful too.
-
-
-## Get Started
-* Excellent blog post by @hd_ka at http://blog.greenbrain.de/2014/10/fire-up-those-caches.html
-* Grant permission
-* Configure Task Scheduler
-* Enable trigger conditions
+I used several different warmup scripts. All worked OK but each seemed to lack features so I decided to create one for myself. Hope you find it useful too.
 
 ## Key Features
-* Supports SharePoint 2010, 2013, and 2016
-* Supports custom page URLs
-* Automatically detects all Web Application URLs
-* Downloads full page resources (CSS, JS, images) not just HTML
-* Downloads using Internet Explorer COM automation
-* Great for ECM websites to help populate blob cache
-* Warms up Central Admin too. Faster admin UI experience!
+* SharePoint 2010, 2013, and 2016
+* Custom page URLs
+* Detect SP Web Application URLs
+* Detect Host Named Site Collection URLs
+* Detects Service Application URLs
+* Detects Project Server PWA 
+* Download full page resources (JS, images) not just HTML
+* Download with `Invoke-WebRequest` 
+* Great for ECM websites to populate blob cache
+* Warm up Central Admin for a faster admin GUI experience!
+* Display W3WP total #MB before and after
+* Excellent blog post by [@hd_ka](https://twitter.com/hd_ka) at [http://blog.greenbrain.de/2014/10/fire-up-those-caches.html](http://blog.greenbrain.de/2014/10/fire-up-those-caches.html)
 
 ## Quick Start
-* Download the release, unpack and rename the script to "SPBestWarmup.ps1"
-* Copy "SPBestWarmup.ps1" on each SharePoint web front end (WFE)
-* Run "SPBestWarmup.ps1 -install" to create the Task Scheduler item
-* Sit back and watch it run
-
-## Admin Tip
-* After reboot run this command to manually trigger the job and warm up IIS
-SCHTASKS /RUN /TN "SPBestWarmup"
+* Download `SPBestWarmup.ps1`
+* Copy `SPBestWarmup.ps1` to one SharePoint web front end (WFE)
+* Run `SPBestWarmup.ps1 -f` to install farm wide. Creates Task Scheduler job on every machine.
+* Run `SPBestWarmup.ps1 -i` to install locally. Creates Task Scheduler job on the local machine.
+* Run `SPBestWarmup.ps1 -u` to uninstall farm wide. Deletes any Task Scheduler job named "SPBestWarmup"
+* Sit back and enjoy!
 
 ## Screenshots
 
-* Run with Scheduled Task present
-* ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/1.png)
+* Install farm wide
+![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/1.jpg)
 
-* Run without Scheduled Task (reminder how to create)
-* ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/2.png)
+* Manual run
+![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/2.jpg)
 
-* Install to create Scheduled Task
-* ![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/3.png)
+* Manual run with custom URL parameter
+![image](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/2.jpg)
 
-## Note
-* Running this with a different service account than farm might require you to first grant PowerShell access. This will ensure the service account has access to run "Get-SPWebApplication" and read ConfigDB for which URLs to load. http://technet.microsoft.com/en-us/magazine/gg490648.aspx
+## Admin Tip
+* After reboot run this command to manually trigger the job and warm up IIS
+`SCHTASKS /RUN /TN "SPBestWarmup"`
+
+## Custom URLs
+* Use the `-url` paramter to add custom URLs from the command line. 
+* Rename Central Admin site title and edit lines `280-295` to add custom URLs within the script.  Good for lifecycle (dev, test, prod).
+
+## Permission
+* Running this with a different service account than farm might require you to first grant PowerShell access. This ensures the service account has access to run `Get-SPWebApplication` and `Get-SPServer` for detecting URLs to load. [http://technet.microsoft.com/en-us/magazine/gg490648.aspx
+](http://technet.microsoft.com/en-us/magazine/gg490648.aspx)
 
 ## Contact
 Please drop a line to [@spjeff](https://twitter.com/spjeff) or [spjeff@spjeff.com](mailto:spjeff@spjeff.com)
