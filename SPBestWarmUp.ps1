@@ -1,12 +1,13 @@
 ﻿#requires -version 3.0
+$header = "SPBestWarmUp v2.2  (last updated 03-21-2016)"
 <#
 .SYNOPSIS  
-    Warm up SharePoint IIS W3WP memory cache by loading pages from Internet Explorer or WebRequest
+	Warm up SharePoint IIS W3WP memory cache by loading pages from Internet Explorer or WebRequest
 
 .DESCRIPTION
-    Loads the full page so resources like CSS, JS, and images are included.  Please modify lines 85-105
+	Loads the full page so resources like CSS, JS, and images are included.  Please modify lines 85-105
 	to suit your portal content design (popular URLs, custom pages, etc.)
-    
+	
 	Comments and suggestions always welcome!  Please, use the issues panel at the project page.
 
 .PARAMETER url
@@ -29,24 +30,24 @@
 	.\SPBestWarmUp.ps1 -url "http://domainA.tld","http://domainB.tld"
 
 .EXAMPLE
-    .\SPBestWarmUp.ps1 -i
+	.\SPBestWarmUp.ps1 -i
 	.\SPBestWarmUp.ps1 -install
 
 .EXAMPLE
-    .\SPBestWarmUp.ps1 -f
+	.\SPBestWarmUp.ps1 -f
 	.\SPBestWarmUp.ps1 -installfarm
 
 .EXAMPLE
-    .\SPBestWarmUp.ps1 -u
+	.\SPBestWarmUp.ps1 -u
 	.\SPBestWarmUp.ps1 -uninstall
 
 	
 .NOTES  
-    File Name     : SPBestWarmUp.ps1
-    Author        : Jeff Jones  - @spjeff
-					Hagen Deike - @hd_ka
-    Version       : 2.2
-	Last Modified : 03-21-2016
+	File Name		:	SPBestWarmUp.ps1
+	Author			:	Jeff Jones  - @spjeff
+						Hagen Deike - @hd_ka
+	Version			:	2.2
+	Last Modified	:	03-21-2016
 
 .LINK
 	http://spbestwarmup.codeplex.com/
@@ -54,23 +55,23 @@
 
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory=$False, Position=0, ValueFromPipeline=$false, HelpMessage='A collection of URLs that will be fetched too')]
-    [Alias("url")]
-    [ValidateNotNullOrEmpty()]
-    [ValidatePattern("https?:\/\/\D+")]
-    [string[]]$cmdurl,
+	[Parameter(Mandatory=$False, Position=0, ValueFromPipeline=$false, HelpMessage='A collection of URLs that will be fetched too')]
+	[Alias("url")]
+	[ValidateNotNullOrEmpty()]
+	[ValidatePattern("https?:\/\/\D+")]
+	[string[]]$cmdurl,
 
 	[Parameter(Mandatory=$False, Position=1, ValueFromPipeline=$false, HelpMessage='Use -install -i parameter to add script to Windows Task Scheduler on local machine')]
 	[Alias("i")]
-    [switch]$install,
+	[switch]$install,
 	
 	[Parameter(Mandatory=$False, Position=2, ValueFromPipeline=$false, HelpMessage='Use -installfarm -f parameter to add script to Windows Task Scheduler on all farm machines')]
 	[Alias("f")]
-    [switch]$installfarm,
+	[switch]$installfarm,
 	
 	[Parameter(Mandatory=$False, Position=3, ValueFromPipeline=$false, HelpMessage='Use -uninstall -u parameter to remove Windows Task Scheduler job')]
 	[Alias("u")]
-    [switch]$uninstall
+	[switch]$uninstall
 )
 
 Function Installer() {
@@ -139,16 +140,16 @@ Function WarmUp() {
 	# Load plugin
 	Add-PSSnapIn Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
 
-    # Warm up CMD parameter URLs
-    $cmdurl |ForEach-Object {NavigateTo $_}
+	# Warm up CMD parameter URLs
+	$cmdurl |ForEach-Object {NavigateTo $_}
 
-    # Warm up SharePoint web applications
+	# Warm up SharePoint web applications
 	Write-Output "Opening Web Applications..."
-    $was = (Get-SPWebApplication -IncludeCentralAdministration)
+	$was = (Get-SPWebApplication -IncludeCentralAdministration)
 	foreach ($wa in $was) {
 		$url = $wa.Url
 		NavigateTo $url
-        NavigateTo $url"_api/web"
+		NavigateTo $url"_api/web"
 		NavigateTo $url"_layouts/viewlsts.aspx"
 		NavigateTo $url"_vti_bin/UserProfileService.asmx"
 		NavigateTo $url"_vti_bin/sts/spsecuritytokenservice.svc"
@@ -157,10 +158,10 @@ Function WarmUp() {
 	# Warm up Service Applications
 	Get-SPServiceApplication |ForEach-Object {$_.EndPoints |ForEach-Object {$_.ListenUris |ForEach-Object {NavigateTo $_.AbsoluteUri}}}
 
-    # Warm up Project Server
+	# Warm up Project Server
 	Write-Output "Opening Project Server PWAs..."
-    if ((Get-Command Get-SPProjectWebInstance -ErrorAction SilentlyContinue).Count -gt 0) {
-        Get-SPProjectWebInstance |ForEach-Object {
+	if ((Get-Command Get-SPProjectWebInstance -ErrorAction SilentlyContinue).Count -gt 0) {
+		Get-SPProjectWebInstance |ForEach-Object {
 			# Thanks to Eugene Pavlikov for the snippet
 			$url = ($_.Url).AbsoluteUri + "/"
 		
@@ -189,23 +190,23 @@ Function WarmUp() {
 }
 
 Function NavigateTo([string] $url) {
-    if ($url.ToUpper().StartsWith("HTTP")) {
-        Write-Host "  $url" -NoNewLine
+	if ($url.ToUpper().StartsWith("HTTP")) {
+		Write-Host "  $url" -NoNewLine
 		# WebRequest command line
 		try {
 			$wr = Invoke-WebRequest -Uri $url -UseBasicParsing -UseDefaultCredentials -TimeoutSec 120
 			FetchResources $url $wr.Images
 			FetchResources $url $wr.Scripts
-            Write-Host "."
+			Write-Host "."
 		} catch {
 			$httpCode = $_.Exception.Response.StatusCode.Value__
-            if ($httpCode) {
-			    Write-Host "   [$httpCode]" -Fore Yellow
-            } else {
+			if ($httpCode) {
+				Write-Host "   [$httpCode]" -Fore Yellow
+			} else {
 				Write-Host " "
 			}
 		}
-    }
+	}
 }
 
 Function FetchResources($baseUrl, $resources) {
@@ -244,34 +245,34 @@ Function ShowW3WP() {
 }
 
 # Main
-Write-Output "SPBestWarmUp v2.11  (last updated 03-21-2016)`n------`n"
+Write-Output "$header`n------`n"
 
 # Check Permission Level
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 {
-    Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
-    break
+	Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
+	break
 } else {
-    # Snapin
-    Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
+	# Snapin
+	Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
 
-    # Task Scheduler
-    $cmdpath = $MyInvocation.MyCommand.Path
-    $tasks = schtasks /query /fo csv | ConvertFrom-Csv
-    $spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
-    if (!$spb -and !$install -and !$installfarm) {
-	    Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
-    }
-    if ($install -or $installfarm -or $uninstall) {
+	# Task Scheduler
+	$cmdpath = $MyInvocation.MyCommand.Path
+	$tasks = schtasks /query /fo csv | ConvertFrom-Csv
+	$spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
+	if (!$spb -and !$install -and !$installfarm) {
+		Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
+	}
+	if ($install -or $installfarm -or $uninstall) {
 		Installer
-    }
+	}
 	if ($uninstall) {
 		break
 	}
 	
 	# Core
 	ShowW3WP
-    WarmUp
+	WarmUp
 	ShowW3WP
 	
 	# Custom URLs - Add your own below
