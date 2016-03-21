@@ -65,11 +65,11 @@ param (
 Function Installer() {
 	# Add to Task Scheduler
 	Write-Output "  Installing to Task Scheduler..."
-	$user = $ENV:USERDOMAIN+"\"+$ENV:USERNAME
+	$user = $ENV:USERDOMAIN + "\"+$ENV:USERNAME
 	Write-Output "  Current User: $user"
 	
 	# Attempt to detect password from IIS Pool (if current user is local admin and farm account)
-	$appPools = Get-WmiObject -Namespace "root\MicrosoftIISV2" -Class "IIsApplicationPoolSetting" | Select WAMUserName, WAMUserPass
+	$appPools = Get-CimInstance -Namespace "root/MicrosoftIISv2" -ClassName "IIsApplicationPoolSetting" -Property Name, WAMUserName, WAMUserPass | Select-Object WAMUserName, WAMUserPass
 	foreach ($pool in $appPools) {			
 		if ($pool.WAMUserName -like $user) {
 			$pass = $pool.WAMUserPass
@@ -85,20 +85,20 @@ Function Installer() {
 	}
 	
 	# Command
-	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$global:path -webrequest'"""
+	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$cmdpath -webrequest'"""
 	
 	# Target machines
 	$machines = @()
 	if ($installfarm -or $uninstall) {
 		# Create farm wide on remote machines
-		foreach ($srv in (Get-SPServer |? {$_.Role -ne "Invalid"})) {
+		foreach ($srv in (Get-SPServer |Where-Object {$_.Role -ne "Invalid"})) {
 			$machines += $srv.Address
 		}
 	} else {
 		# Create local on current machine
 		$machines += "localhost"
 	}
-	$machines |% {
+	$machines |ForEach-Object {
 		if ($uninstall) {
 			# Delete task
 			Write-Output "SCHTASKS DELETE on $_"
@@ -108,13 +108,13 @@ Function Installer() {
 			# Copy local file to remote UNC path machine
 			Write-Output "SCHTASKS CREATE on $_"
 			if ($_ -ne "localhost" -and $_ -ne $ENV:COMPUTERNAME) {
-				$dest = $global:path
+				$dest = $cmdpath
 				$drive = $dest.substring(0,1)
-				$match =  Get-WmiObject -class win32_logicaldisk |? {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
+				$match =  Get-CimInstance -Class Win32_LogicalDisk |Where-Object {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
 				if ($match) {
 					$dest = "\\" + $_ + "\" + $dest.substring(0,1) + "$" + $dest.substring(2,$dest.length-2)
 					mkdir (Split-Path $dest) -ErrorAction SilentlyContinue
-					Copy-Item $global:path $dest -Confirm:$false
+					Copy-Item $cmdpath $dest -Confirm:$false
 				}
 			}
 			# Create task
@@ -129,7 +129,7 @@ Function WarmUp() {
 	Add-PSSnapIn Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
 
     # Warm up CMD parameter URLs
-    $cmdurl |% {NavigateTo $_}
+    $cmdurl |ForEach-Object {NavigateTo $_}
 
     # Warm up SharePoint web applications
 	Write-Output "Opening Web Applications..."
@@ -143,12 +143,12 @@ Function WarmUp() {
 	}
 	
 	# Warm up Service Applications
-	Get-SPServiceApplication |% {$_.EndPoints |% {$_.ListenUris |% {NavigateTo $_.AbsoluteUri}}}
+	Get-SPServiceApplication |ForEach-Object {$_.EndPoints |ForEach-Object {$_.ListenUris |ForEach-Object {NavigateTo $_.AbsoluteUri}}}
 
     # Warm up Project Server
 	Write-Output "Opening Project Server PWAs..."
     if ((Get-Command Get-SPProjectWebInstance -ErrorAction SilentlyContinue).Count -gt 0) {
-        Get-SPProjectWebInstance |% {
+        Get-SPProjectWebInstance |ForEach-Object {
 			# Thanks to Eugene Pavlikov for the snippet
 			$url = ($_.Url).AbsoluteUri + "/"
 		
@@ -170,7 +170,7 @@ Function WarmUp() {
 	
 	# Warm up Host Name Site Collections (HNSC)
 	Write-Output "Opening Host Name Site Collections (HNSC)..."
-	$hnsc = Get-SPSite -Limit All |? {$_.HostHeaderIsSiteName -eq $true} | Select Url
+	$hnsc = Get-SPSite -Limit All |Where-Object {$_.HostHeaderIsSiteName -eq $true} | Select-Object Url
 	foreach ($sc in $hnsc) {
 		NavigateTo $sc.Url
 	}
@@ -179,12 +179,15 @@ Function WarmUp() {
 Function NavigateTo([string] $url) {
     if ($url.ToUpper().StartsWith("HTTP")) {
         Write-Host "  $url" -NoNewLine
-		# WebRequest command line    
-		try {
-			$wr = Invoke-WebRequest -Uri $url -UseBasicParsing -UseDefaultCredentials -TimeoutSec 120
-			FetchResources $url $wr.Images
-			FetchResources $url $wr.Scripts
-		} catch {}
+		# WebRequest command line
+			try {
+				$wr = Invoke-WebRequest -Uri $url -UseBasicParsing -UseDefaultCredentials -TimeoutSec 120
+				FetchResources $url $wr.Images
+				FetchResources $url $wr.Scripts
+			} catch {
+				$httpCode = $_.Exception.Response.StatusCode.Value__
+				Write-Error $httpCode
+			}
 		Write-Host "."
     }
 }
@@ -213,14 +216,14 @@ Function FetchResources($baseUrl, $resources) {
 		$counter++
 		
 		# Execute
-		$scriptReturn = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120
+		Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120
 		Write-Host "." -NoNewLine
 	}
 }
 
 Function ShowW3WP() {
 	# Total memory used by IIS worker processes
-	$mb = [Math]::Round((Get-Process W3WP -ErrorAction SilentlyContinue | Select pm | Measure pm -Sum).Sum/1MB)
+	$mb = [Math]::Round((Get-Process W3WP -ErrorAction SilentlyContinue | Select-Object pm | Measure-Object pm -Sum).Sum/1MB)
 	Write-Host "Total W3WP = $mb MB" -Fore Green
 }
 
@@ -234,9 +237,9 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     break
 } else {
     # Task Scheduler
-    $global:path = $MyInvocation.MyCommand.Path
+    $cmdpath = $MyInvocation.MyCommand.Path
     $tasks = schtasks /query /fo csv | ConvertFrom-Csv
-    $spb = $tasks |? {$_.TaskName -eq "\SPBestWarmUp"}
+    $spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
     if (!$spb -and !$install) {
 	    Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
     }
@@ -254,8 +257,8 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 	
 	# Custom URLs - Add your own below
 	# Looks at Central Admin Site Title to support many farms with a single script
-	(Get-SPWebApplication -IncludeCentralAdministration) |? {$_.IsAdministrationWebApplication -eq $true} |% {
-		$caTitle = Get-SPWeb $_.Url | Select Title
+	(Get-SPWebApplication -IncludeCentralAdministration) |Where-Object {$_.IsAdministrationWebApplication -eq $true} |ForEach-Object {
+		$caTitle = Get-SPWeb $_.Url | Select-Object Title
 	}
 	switch -Wildcard ($caTitle) {
 		"*PROD*" {
