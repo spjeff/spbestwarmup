@@ -1,3 +1,4 @@
+#requires -version 3.0
 <#
 .SYNOPSIS  
     Warm up SharePoint IIS W3WP memory cache by loading pages from Internet Explorer or WebRequest
