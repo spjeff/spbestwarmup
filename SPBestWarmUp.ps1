@@ -1,5 +1,4 @@
 ﻿#requires -version 3.0
-$header = "SPBestWarmUp v2.2  (last updated 03-21-2016)"
 <#
 .SYNOPSIS  
 	Warm up SharePoint IIS W3WP memory cache by loading pages from Internet Explorer or WebRequest
@@ -245,7 +244,7 @@ Function ShowW3WP() {
 }
 
 # Main
-Write-Output "$header`n------`n"
+Write-Output "SPBestWarmUp v2.2  (last updated 03-21-2016)`n------`n"
 
 # Check Permission Level
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
