@@ -46,7 +46,7 @@
 	Author			:	Jeff Jones  - @spjeff
 						Hagen Deike - @hd_ka
 	Version			:	2.2
-	Last Modified	:	03-21-2016
+	Last Modified	:	03-25-2016
 
 .LINK
 	http://spbestwarmup.codeplex.com/
@@ -218,7 +218,7 @@ Function FetchResources($baseUrl, $resources) {
 	foreach ($res in $resources) {
 		# Support both abosolute and relative URLs
 		$resUrl  = $res.src
-		if ($resUrl -contains "HTTP") {
+		if ($resUrl.ToUpper() -contains "HTTP") {
 			$fetchUrl = $res.src
 		} else {
 			if (!$resUrl.StartsWith("/")) {
@@ -244,7 +244,7 @@ Function ShowW3WP() {
 }
 
 # Main
-Write-Output "SPBestWarmUp v2.2  (last updated 03-21-2016)`n------`n"
+Write-Output "SPBestWarmUp v2.2  (last updated 03-25-2016)`n------`n"
 
 # Check Permission Level
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
