@@ -240,7 +240,7 @@ Function FetchResources($baseUrl, $resources) {
 Function ShowW3WP() {
 	# Total memory used by IIS worker processes
 	$mb = [Math]::Round((Get-Process W3WP -ErrorAction SilentlyContinue | Select-Object pm | Measure-Object pm -Sum).Sum/1MB)
-	Write-Host "Total W3WP = $mb MB" -Fore Green
+	WriteLog "Total W3WP = $mb MB" "Green"
 }
 
 Function CreateLog() {
@@ -250,31 +250,38 @@ Function CreateLog() {
 	}
 }
 
-Function WriteLog($id, $msg, $error) {
-	# EventLog - write summary
+Function WriteLog($text, $color) {
+	$global:msg += "`n$text"
+	if ($color) {
+		Write-Host $text -Fore $color
+	} else {
+		Write-Output $text
+	}
+}
+
+Function SaveLog($id, $error) {
+	# EventLog
 	if (!$error) {
 		# Success
-		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType 	Information -EventId $id -Message $msg
+		$global:msg += "Operation completed successfully"
+		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType 	Information -EventId $id -Message $global:msg
 	} else {      
 		# Error
-		$msg += $error[0].Exception
-        $msg += "`r`n"
-        $msg += $error[0].ErrorDetails.Message
-		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $msg
+		$global:msg += $error[0].Exception + "`r`n" + $error[0].ErrorDetails.Message
+		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $global:msg
 	}
 }
 
 # Main
-Write-Output "SPBestWarmUp v2.3  (last updated 03-28-2016)`n------`n"
+CreateLog
+WriteLog "SPBestWarmUp v2.3  (last updated 03-28-2016)`n------`n"
 
 # Check Permission Level
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-	Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
+if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+	Write-Warning "You do not have elevated Administrator rights to run this script.`nPlease re-run as Administrator."
 	break
 } else {
 	try {
-		CreateLog
-		
 		# SharePoint cmdlets
 		Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
 
@@ -287,7 +294,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 		}
 		if ($install -or $installfarm -or $uninstall) {
 			Installer
-			WriteLog 2 "Installed to Task Scheduler"
+			SaveLog 2 "Installed to Task Scheduler"
 		}
 		if ($uninstall) {
 			break
@@ -320,8 +327,8 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 				#NavigateTo "http://portal/popularPage3.aspx
 			}
 		}
-		WriteLog 1 "Operation completed successfully"
+		SaveLog 1 "Operation completed successfully"
 	} catch {
-		WriteLog 201 "ERROR" $error
+		SaveLog 201 "ERROR" $error
 	}
 }
