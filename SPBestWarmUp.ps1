@@ -45,8 +45,8 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 						Hagen Deike - @hd_ka
-	Version			:	2.2
-	Last Modified	:	03-25-2016
+	Version			:	2.3
+	Last Modified	:	03-28-2016
 
 .LINK
 	http://spbestwarmup.codeplex.com/
@@ -243,57 +243,85 @@ Function ShowW3WP() {
 	Write-Host "Total W3WP = $mb MB" -Fore Green
 }
 
+Function CreateLog() {
+	# EventLog - create source if missing
+	if (!(Get-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue)) {
+		New-EventLog -LogName Application -Source "SPBestWarmUp"
+	}
+}
+
+Function WriteLog($id, $msg, $error) {
+	# EventLog - write summary
+	if (!$error) {
+		# Success
+		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType 	Information -EventId $id -Message $msg
+	} else {      
+		# Error
+		$msg += $error[0].Exception
+        $msg += "`r`n"
+        $msg += $error[0].ErrorDetails.Message
+		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $msg
+	}
+}
+
 # Main
-Write-Output "SPBestWarmUp v2.2  (last updated 03-25-2016)`n------`n"
+Write-Output "SPBestWarmUp v2.3  (last updated 03-28-2016)`n------`n"
 
 # Check Permission Level
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-{
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
 	Write-Warning "You do not have Administrator rights to run this script!`nPlease re-run this script as an Administrator!"
 	break
 } else {
-	# Snapin
-	Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
+	try {
+		CreateLog
+		
+		# SharePoint cmdlets
+		Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
 
-	# Task Scheduler
-	$cmdpath = $MyInvocation.MyCommand.Path
-	$tasks = schtasks /query /fo csv | ConvertFrom-Csv
-	$spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
-	if (!$spb -and !$install -and !$installfarm) {
-		Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
-	}
-	if ($install -or $installfarm -or $uninstall) {
-		Installer
-	}
-	if ($uninstall) {
-		break
-	}
-	
-	# Core
-	ShowW3WP
-	WarmUp
-	ShowW3WP
-	
-	# Custom URLs - Add your own below
-	# Looks at Central Admin Site Title to support many farms with a single script
-	(Get-SPWebApplication -IncludeCentralAdministration) |Where-Object {$_.IsAdministrationWebApplication -eq $true} |ForEach-Object {
-		$caTitle = Get-SPWeb $_.Url | Select-Object Title
-	}
-	switch -Wildcard ($caTitle) {
-		"*PROD*" {
-			#NavigateTo "http://portal/popularPage.aspx"
-			#NavigateTo "http://portal/popularPage2.aspx"
-			#NavigateTo "http://portal/popularPage3.aspx
+		# Task Scheduler
+		$cmdpath = $MyInvocation.MyCommand.Path
+		$tasks = schtasks /query /fo csv | ConvertFrom-Csv
+		$spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
+		if (!$spb -and !$install -and !$installfarm) {
+			Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
 		}
-		"*TEST*" {
-			#NavigateTo "http://portal/popularPage.aspx"
-			#NavigateTo "http://portal/popularPage2.aspx"
-			#NavigateTo "http://portal/popularPage3.aspx
+		if ($install -or $installfarm -or $uninstall) {
+			Installer
+			WriteLog 2 "Installed to Task Scheduler"
 		}
-		default {
-			#NavigateTo "http://portal/popularPage.aspx"
-			#NavigateTo "http://portal/popularPage2.aspx"
-			#NavigateTo "http://portal/popularPage3.aspx
+		if ($uninstall) {
+			break
 		}
+		
+		# Core
+		ShowW3WP
+		WarmUp
+		ShowW3WP
+		
+		# Custom URLs - Add your own below
+		# Looks at Central Admin Site Title to support many farms with a single script
+		(Get-SPWebApplication -IncludeCentralAdministration) |Where-Object {$_.IsAdministrationWebApplication -eq $true} |ForEach-Object {
+			$caTitle = Get-SPWeb $_.Url | Select-Object Title
+		}
+		switch -Wildcard ($caTitle) {
+			"*PROD*" {
+				#NavigateTo "http://portal/popularPage.aspx"
+				#NavigateTo "http://portal/popularPage2.aspx"
+				#NavigateTo "http://portal/popularPage3.aspx
+			}
+			"*TEST*" {
+				#NavigateTo "http://portal/popularPage.aspx"
+				#NavigateTo "http://portal/popularPage2.aspx"
+				#NavigateTo "http://portal/popularPage3.aspx
+			}
+			default {
+				#NavigateTo "http://portal/popularPage.aspx"
+				#NavigateTo "http://portal/popularPage2.aspx"
+				#NavigateTo "http://portal/popularPage3.aspx
+			}
+		}
+		WriteLog 1 "Operation completed successfully"
+	} catch {
+		WriteLog 201 "ERROR" $error
 	}
 }
