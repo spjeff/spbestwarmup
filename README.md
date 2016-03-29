@@ -1,4 +1,4 @@
-## Project Description
+## Description
 Tired of waiting for SharePoint pages to load? Want something easy to support? That works on all versions? This warmup script is for you!
 
 I used several different warmup scripts. All worked OK but each seemed to lack features so I decided to create one for myself. Hope you find it useful too.
