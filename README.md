@@ -3,6 +3,8 @@ Tired of waiting for SharePoint pages to load? Want something easy to support? T
 
 I used several different warmup scripts. All worked OK but each seemed to lack features so I decided to create a new one. Hope you find it useful too.
 
+[![](https://raw.githubusercontent.com/spjeff/spbestwarmup/master/doc/download.png)](https://github.com/spjeff/spbestwarmup/releases/download/SPBestWarmUp/SPBestWarmUp.zip)
+
 ## Key Features
 * SharePoint 2010, 2013, and 2016
 * Custom page URLs
