@@ -1,10 +1,10 @@
 ﻿#requires -version 3.0
 <#
 .SYNOPSIS  
-	Warm up SharePoint IIS W3WP memory cache by loading pages from Internet Explorer or WebRequest
+	Warm up SharePoint IIS W3WP memory cache by loading pages from WebRequest
 
 .DESCRIPTION
-	Loads the full page so resources like CSS, JS, and images are included.  Please modify lines 85-105
+	Loads the full page so resources like CSS, JS, and images are included.  Please modify lines 331-345
 	to suit your portal content design (popular URLs, custom pages, etc.)
 	
 	Comments and suggestions always welcome!  Please, use the issues panel at the project page.
@@ -45,8 +45,8 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 						Hagen Deike - @hd_ka
-	Version			:	2.3
-	Last Modified	:	03-28-2016
+	Version			:	2.1.0
+	Last Modified	:	04-13-2016
 
 .LINK
 	http://spbestwarmup.codeplex.com/
@@ -96,7 +96,7 @@ Function Installer() {
 	}
 	
 	# Command
-	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$cmdpath -webrequest'"""
+	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$cmdpath'"""
 	
 	# Target machines
 	$machines = @()
@@ -144,7 +144,7 @@ Function WarmUp() {
 
 	# Warm up SharePoint web applications
 	Write-Output "Opening Web Applications..."
-	$was = (Get-SPWebApplication -IncludeCentralAdministration)
+	$was = (Get-SPWebApplication -IncludeCentralAdministration |Sort-Object IsAdministrationWebApplication)
 	foreach ($wa in $was) {
 		$url = $wa.Url
 		NavigateTo $url
@@ -152,6 +152,22 @@ Function WarmUp() {
 		NavigateTo $url"_layouts/viewlsts.aspx"
 		NavigateTo $url"_vti_bin/UserProfileService.asmx"
 		NavigateTo $url"_vti_bin/sts/spsecuritytokenservice.svc"
+		if ($wa.IsAdministrationWebApplication) {
+			# Central Admin
+			NavigateTo $url"Lists/HealthReports/AllItems.aspx"
+			NavigateTo $url"_admin/FarmServers.aspx"
+			NavigateTo $url"_admin/Server.aspx"
+			NavigateTo $url"_admin/WebApplicationList.aspx"
+			NavigateTo $url"_admin/ServiceApplications.aspx"
+			
+			# Manage Service Application
+			$sa = Get-SPServiceApplication
+			$links = $sa |ForEach-Object {$_.ManageLink.Url} |Select-Object -Unique
+			foreach ($link in $links) {
+				$ml = $link.TrimStart('/')
+				NavigateTo "$url$ml"
+			}
+		}
 	}
 	
 	# Warm up Service Applications
@@ -235,6 +251,7 @@ Function FetchResources($baseUrl, $resources) {
 		$resp = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120
 		Write-Host "." -NoNewLine
 	}
+	Write-Progress -Activity "Completed" -Completed
 }
 
 Function ShowW3WP() {
@@ -246,7 +263,7 @@ Function ShowW3WP() {
 Function CreateLog() {
 	# EventLog - create source if missing
 	if (!(Get-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue)) {
-		New-EventLog -LogName Application -Source "SPBestWarmUp"
+		New-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue | Out-Null
 	}
 }
 
@@ -259,12 +276,12 @@ Function WriteLog($text, $color) {
 	}
 }
 
-Function SaveLog($id, $error) {
+Function SaveLog($id, $txt, $error) {
 	# EventLog
 	if (!$error) {
 		# Success
-		$global:msg += "Operation completed successfully"
-		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType 	Information -EventId $id -Message $global:msg
+		$global:msg += $txt
+		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId $id -Message $global:msg
 	} else {      
 		# Error
 		$global:msg += $error[0].Exception + "`r`n" + $error[0].ErrorDetails.Message
@@ -274,7 +291,7 @@ Function SaveLog($id, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.3  (last updated 03-28-2016)`n------`n"
+WriteLog "SPBestWarmUp v2.1.0  (last updated 04-13-2016)`n------`n"
 
 # Check Permission Level
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
