@@ -46,7 +46,7 @@
 	Author			:	Jeff Jones  - @spjeff
 	Author			:	Hagen Deike - @hd_ka
 	Version			:	2.2
-	Modified		:	04-13-2016
+	Last Modified	:	04-13-2016
 
 .LINK
 	http://spbestwarmup.codeplex.com/
