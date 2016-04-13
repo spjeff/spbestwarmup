@@ -42,7 +42,7 @@ I used several different warmup scripts. All worked OK but each seemed to lack f
 
 ## Custom URLs
 * Use the `-url` paramter to add custom URLs from the command line. 
-* Rename Central Admin site title and edit lines `280-295` to add custom URLs within the script.  Good for lifecycle (dev, test, prod).
+* Rename Central Admin site title and edit lines `331-345` to add custom URLs within the script.  Good for lifecycle (dev, test, prod).
 
 ## Permission
 * Running this with a different service account than farm might require you to first grant PowerShell access. This ensures the service account has access to run `Get-SPWebApplication` and `Get-SPServer` for detecting URLs to load. [http://technet.microsoft.com/en-us/magazine/gg490648.aspx
