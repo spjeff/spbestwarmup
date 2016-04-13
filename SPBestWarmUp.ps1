@@ -45,7 +45,7 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 						Hagen Deike - @hd_ka
-	Version			:	2.1.0
+	Version			:	2.2
 	Last Modified	:	04-13-2016
 
 .LINK
@@ -291,7 +291,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.1.0  (last updated 04-13-2016)`n------`n"
+WriteLog "SPBestWarmUp v2.2  (last updated 04-13-2016)`n------`n"
 
 # Check Permission Level
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
