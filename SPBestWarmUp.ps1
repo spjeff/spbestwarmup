@@ -49,7 +49,7 @@
 	Modified		:	04-13-2016
 
 .LINK
-	http://spbestwarmup.codeplex.com/
+	https://github.com/spjeff/spbestwarmup
 #>
 
 [CmdletBinding()]
