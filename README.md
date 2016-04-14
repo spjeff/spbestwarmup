@@ -15,7 +15,8 @@ I used several different warmup scripts. All worked OK but each seemed to lack f
 * Download full page resources (JS, images) not just HTML
 * Download with `Invoke-WebRequest` 
 * Great for ECM websites to populate blob cache
-* Warm up Central Admin for a faster admin GUI experience!
+* Warm up Central Admin - home, health rules, web apps for a faster admin experience!
+* Warm up Central Admin - all Manage Service Application pages.
 * Display W3WP total #MB before and after
 * Excellent blog post by [@hd_ka](https://twitter.com/hd_ka) at [http://blog.greenbrain.de/2014/10/fire-up-those-caches.html](http://blog.greenbrain.de/2014/10/fire-up-those-caches.html)
 
