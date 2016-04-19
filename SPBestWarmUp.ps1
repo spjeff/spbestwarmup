@@ -25,6 +25,9 @@
 .PARAMETER uninstall
 	Typing "SPBestWarmUp.ps1 -uninstall" will remove Task Scheduler job from all machines in the farm.
 	
+.PARAMETER skiplog
+	Typing "SPBestWarmUp.ps1 -skiplog" will avoid writing to the EventLog.
+	
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -url "http://domainA.tld","http://domainB.tld"
 
@@ -45,8 +48,8 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 	Author			:	Hagen Deike - @hd_ka
-	Version			:	2.2
-	Modified		:	04-13-2016
+	Version			:	2.2.1
+	Modified		:	04-19-2016
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -70,7 +73,11 @@ param (
 	
 	[Parameter(Mandatory=$False, Position=3, ValueFromPipeline=$false, HelpMessage='Use -uninstall -u parameter to remove Windows Task Scheduler job')]
 	[Alias("u")]
-	[switch]$uninstall
+	[switch]$uninstall,
+	
+	[Parameter(Mandatory=$False, Position=4, ValueFromPipeline=$false, HelpMessage='Use -skiplog -sl parameter to avoid writing to Event Log')]
+	[Alias("sl")]
+	[switch]$skiplog
 )
 
 Function Installer() {
@@ -278,20 +285,22 @@ Function WriteLog($text, $color) {
 
 Function SaveLog($id, $txt, $error) {
 	# EventLog
-	if (!$error) {
-		# Success
-		$global:msg += $txt
-		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId $id -Message $global:msg
-	} else {      
-		# Error
-		$global:msg += $error[0].Exception + "`r`n" + $error[0].ErrorDetails.Message
-		Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $global:msg
+	if (!skiplog) {
+		if (!$error) {
+			# Success
+			$global:msg += $txt
+			Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId $id -Message $global:msg
+		} else {      
+			# Error
+			$global:msg += $error[0].Exception + "`r`n" + $error[0].ErrorDetails.Message
+			Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $global:msg
+		}
 	}
 }
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.2  (last updated 04-13-2016)`n------`n"
+WriteLog "SPBestWarmUp v2.2.1  (last updated 04-19-2016)`n------`n"
 
 # Check Permission Level
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
