@@ -285,7 +285,7 @@ Function WriteLog($text, $color) {
 
 Function SaveLog($id, $txt, $error) {
 	# EventLog
-	if (!skiplog) {
+	if (!$skiplog) {
 		if (!$error) {
 			# Success
 			$global:msg += $txt
