@@ -48,8 +48,8 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 	Author			:	Hagen Deike - @hd_ka
-	Version			:	2.2.1
-	Modified		:	04-19-2016
+	Version			:	2.2.2
+	Modified		:	04-28-2016
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -241,7 +241,7 @@ Function FetchResources($baseUrl, $resources) {
 	foreach ($res in $resources) {
 		# Support both abosolute and relative URLs
 		$resUrl  = $res.src
-		if ($resUrl.ToUpper() -contains "HTTP") {
+		if ($resUrl.ToUpper().Contains("HTTP")) {
 			$fetchUrl = $res.src
 		} else {
 			if (!$resUrl.StartsWith("/")) {
@@ -300,7 +300,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.2.1  (last updated 04-19-2016)`n------`n"
+WriteLog "SPBestWarmUp v2.2.2  (last updated 04-28-2016)`n------`n"
 
 # Check Permission Level
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
