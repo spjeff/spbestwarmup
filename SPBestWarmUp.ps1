@@ -175,6 +175,17 @@ Function WarmUp() {
 				NavigateTo "$url$ml"
 			}
 		}
+		else {
+			# Warm Up Individual Site Collections and Sites
+			$sites = (Get-SPSite -WebApplication $wa -Limit ALL)
+			foreach($site in $sites){
+				$webs = (Get-SPWeb -Site $site -Limit ALL)
+				foreach($web in $webs){
+					$url = $web.Url
+					NavigateTo $url
+				}
+			}
+		}
 	}
 	
 	# Warm up Service Applications
