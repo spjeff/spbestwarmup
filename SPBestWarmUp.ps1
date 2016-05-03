@@ -48,8 +48,8 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 	Author			:	Hagen Deike - @hd_ka
-	Version			:	2.2.2
-	Modified		:	04-28-2016
+	Version			:	2.2.3
+	Modified		:	05-03-2016
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
