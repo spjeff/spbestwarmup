@@ -28,6 +28,9 @@
 .PARAMETER skiplog
 	Typing "SPBestWarmUp.ps1 -skiplog" will avoid writing to the EventLog.
 	
+.PARAMETER allsites
+	Typing "SPBestWarmUp.ps1 -allsites" will load every site and web URL.
+	
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -url "http://domainA.tld","http://domainB.tld"
 
@@ -48,8 +51,8 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 	Author			:	Hagen Deike - @hd_ka
-	Version			:	2.2.2
-	Modified		:	04-28-2016
+	Version			:	2.2.3
+	Modified		:	05-03-2016
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -77,7 +80,11 @@ param (
 	
 	[Parameter(Mandatory=$False, Position=4, ValueFromPipeline=$false, HelpMessage='Use -skiplog -sl parameter to avoid writing to Event Log')]
 	[Alias("sl")]
-	[switch]$skiplog
+	[switch]$skiplog,
+	
+	[Parameter(Mandatory=$False, Position=5, ValueFromPipeline=$false, HelpMessage='Use -allsites -all parameter to load every site and web')]
+	[Alias("all")]
+	[switch]$allsites
 )
 
 Function Installer() {
@@ -102,8 +109,10 @@ Function Installer() {
 		$pass = Read-Host "Enter password for $user "
 	}
 	
-	# Command
-	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$cmdpath'"""
+	# Task Scheduler command
+	if ($allsites) {$suffix += " -allsites"}
+	if ($skiplog) {$suffix += " -skiplog"}
+	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$cmdpath$suffix'"""
 	
 	# Target machines
 	$machines = @()
@@ -174,6 +183,17 @@ Function WarmUp() {
 				$ml = $link.TrimStart('/')
 				NavigateTo "$url$ml"
 			}
+		}		
+		if ($allsites) {
+			# Warm Up Individual Site Collections and Sites
+ 			$sites = (Get-SPSite -WebApplication $wa -Limit ALL)
+ 			foreach($site in $sites){
+ 				$webs = (Get-SPWeb -Site $site -Limit ALL)
+ 				foreach($web in $webs){
+ 					$url = $web.Url
+ 					NavigateTo $url
+ 				}
+ 			}
 		}
 	}
 	
@@ -300,7 +320,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.2.2  (last updated 04-28-2016)`n------`n"
+WriteLog "SPBestWarmUp v2.2.3  (last updated 05-03-2016)`n------`n"
 
 # Check Permission Level
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
