@@ -179,7 +179,7 @@ Function WarmUp() {
 			# Warm Up Individual Site Collections and Sites
 			$sites = (Get-SPSite -WebApplication $wa -Limit ALL)
 			foreach($site in $sites){
-				$webs = (Get-SPWeb -Site $site -Limit ALL)
+ ₢				$webs = (Get-SPWeb -Site $site -Limit ALL)
 				foreach($web in $webs){
 					$url = $web.Url
 					NavigateTo $url
