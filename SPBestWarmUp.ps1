@@ -1,6 +1,6 @@
 ﻿#requires -version 3.0
 <#
-.SYNOPSIS  
+.SYNOPSIS
 	Warm up SharePoint IIS W3WP memory cache by loading pages from WebRequest
 
 .DESCRIPTION
