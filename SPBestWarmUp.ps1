@@ -1,5 +1,4 @@
-﻿#requires -version 3.0
-<#
+﻿<#
 .SYNOPSIS
 	Warm up SharePoint IIS W3WP memory cache by loading pages from WebRequest
 
@@ -51,8 +50,8 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 	Author			:	Hagen Deike - @hd_ka
-	Version			:	2.2.3
-	Modified		:	05-03-2016
+	Version			:	2.2.4
+	Modified		:	05-13-2016
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -320,7 +319,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.2.3  (last updated 05-03-2016)`n------`n"
+WriteLog "SPBestWarmUp v2.2.4  (last updated 05-13-2016)`n------`n"
 
 # Check Permission Level
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
