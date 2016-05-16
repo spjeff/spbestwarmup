@@ -135,6 +135,7 @@ Function Installer() {
 			Write-Output "SCHTASKS CREATE on $_"
 			if ($_ -ne "localhost" -and $_ -ne $ENV:COMPUTERNAME) {
 				$dest = $cmdpath
+				Write-Host $dest
 				$drive = $dest.substring(0,1)
 				$match =  Get-CimInstance -Class Win32_LogicalDisk |Where-Object {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
 				if ($match) {
