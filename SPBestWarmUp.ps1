@@ -117,14 +117,14 @@ Function Installer() {
 	$machines = @()
 	if ($installfarm -or $uninstall) {
 		# Create farm wide on remote machines
-		foreach ($srv in (Get-SPServer |Where-Object {$_.Role -ne "Invalid"})) {
+		foreach ($srv in (Get-SPServer | Where-Object {$_.Role -ne "Invalid"})) {
 			$machines += $srv.Address
 		}
 	} else {
 		# Create local on current machine
 		$machines += "localhost"
 	}
-	$machines |ForEach-Object {
+	$machines | ForEach-Object {
 		if ($uninstall) {
 			# Delete task
 			Write-Output "SCHTASKS DELETE on $_"
@@ -135,12 +135,12 @@ Function Installer() {
 			Write-Output "SCHTASKS CREATE on $_"
 			if ($_ -ne "localhost" -and $_ -ne $ENV:COMPUTERNAME) {
 				$dest = $cmdpath
-				Write-Host $dest
 				$drive = $dest.substring(0,1)
-				$match =  Get-CimInstance -Class Win32_LogicalDisk |Where-Object {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
+				$match =  Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
 				if ($match) {
 					$dest = "\\" + $_ + "\" + $drive + "$" + $dest.substring(2,$dest.length-2)
 					mkdir (Split-Path $dest) -ErrorAction SilentlyContinue | Out-Null
+					Write-Output $dest
 					Copy-Item $cmdpath $dest -Confirm:$false
 				}
 			}
@@ -156,11 +156,11 @@ Function WarmUp() {
 	Add-PSSnapIn Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
 
 	# Warm up CMD parameter URLs
-	$cmdurl |ForEach-Object {NavigateTo $_}
+	$cmdurl | ForEach-Object {NavigateTo $_}
 
 	# Warm up SharePoint web applications
 	Write-Output "Opening Web Applications..."
-	$was = (Get-SPWebApplication -IncludeCentralAdministration |Sort-Object IsAdministrationWebApplication)
+	$was = (Get-SPWebApplication -IncludeCentralAdministration | Sort-Object IsAdministrationWebApplication)
 	foreach ($wa in $was) {
 		$url = $wa.Url
 		NavigateTo $url
@@ -178,7 +178,7 @@ Function WarmUp() {
 			
 			# Manage Service Application
 			$sa = Get-SPServiceApplication
-			$links = $sa |ForEach-Object {$_.ManageLink.Url} |Select-Object -Unique
+			$links = $sa | ForEach-Object {$_.ManageLink.Url} | Select-Object -Unique
 			foreach ($link in $links) {
 				$ml = $link.TrimStart('/')
 				NavigateTo "$url$ml"
@@ -198,12 +198,12 @@ Function WarmUp() {
 	}
 	
 	# Warm up Service Applications
-	Get-SPServiceApplication |ForEach-Object {$_.EndPoints |ForEach-Object {$_.ListenUris |ForEach-Object {NavigateTo $_.AbsoluteUri}}}
+	Get-SPServiceApplication | ForEach-Object {$_.EndPoints | ForEach-Object {$_.ListenUris | ForEach-Object {NavigateTo $_.AbsoluteUri}}}
 
 	# Warm up Project Server
 	Write-Output "Opening Project Server PWAs..."
 	if ((Get-Command Get-SPProjectWebInstance -ErrorAction SilentlyContinue).Count -gt 0) {
-		Get-SPProjectWebInstance |ForEach-Object {
+		Get-SPProjectWebInstance | ForEach-Object {
 			# Thanks to Eugene Pavlikov for the snippet
 			$url = ($_.Url).AbsoluteUri + "/"
 		
@@ -225,7 +225,7 @@ Function WarmUp() {
 	
 	# Warm up Host Name Site Collections (HNSC)
 	Write-Output "Opening Host Name Site Collections (HNSC)..."
-	$hnsc = Get-SPSite -Limit All |Where-Object {$_.HostHeaderIsSiteName -eq $true} | Select-Object Url
+	$hnsc = Get-SPSite -Limit All | Where-Object {$_.HostHeaderIsSiteName -eq $true} | Select-Object Url
 	foreach ($sc in $hnsc) {
 		NavigateTo $sc.Url
 	}
