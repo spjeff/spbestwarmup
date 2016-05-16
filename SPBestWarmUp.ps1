@@ -311,7 +311,7 @@ Function SaveLog($id, $txt, $error) {
 			Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId $id -Message $global:msg
 		} else {      
 			# Error
-			$global:msg += $error[0].Exception + "`r`n" + $error[0].ErrorDetails.Message
+			$global:msg += $error[0].Exception.ToString() + "`r`n" + $error[0].ErrorDetails.Message
 			Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $global:msg
 		}
 	}
