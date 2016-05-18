@@ -9,9 +9,7 @@
 	Comments and suggestions always welcome!  Please, use the issues panel at the project page.
 
 .PARAMETER url
-	Typing "SPBestWarmUp.ps1 -install" will create a local Task Scheduler job under credentials of the
-	current user.  Job runs every 60 minutes on the hour to help automatically populate cache.  
-	Keeps cache full even after IIS daily recycle, WSP deployment, reboot, or other system events.
+	A collection of url that will be added to the list of websites the script will fetch.
 	
 .PARAMETER install
 	Typing "SPBestWarmUp.ps1 -install" will create a local Task Scheduler job under credentials of the
