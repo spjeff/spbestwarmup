@@ -48,7 +48,7 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 	Author			:	Hagen Deike - @hd_ka
-	Version			:	2.2.4
+	Version			:	2.2.5
 	Modified		:	05-13-2016
 
 .LINK
@@ -158,30 +158,18 @@ Function WarmUp() {
 
 	# Warm up SharePoint web applications
 	Write-Output "Opening Web Applications..."
-	$was = (Get-SPWebApplication -IncludeCentralAdministration | Sort-Object IsAdministrationWebApplication)
-	foreach ($wa in $was) {
-		$url = $wa.Url
+
+	# Accessing the Alternate URls to warm up all "extended webs" (i.e. multiple IIS websites exists for one SharePoint webapp)
+	$altUrls = Get-SPAlternateURL
+	foreach ($altUrl in $altUrls) {
+		$url = $altUrl.PublicUrl
 		NavigateTo $url
 		NavigateTo $url"_api/web"
+        NavigateTo $url"_api/_trust" # for ADFS environments, first user login is slow if this URL is not warmed up 
 		NavigateTo $url"_layouts/viewlsts.aspx"
 		NavigateTo $url"_vti_bin/UserProfileService.asmx"
 		NavigateTo $url"_vti_bin/sts/spsecuritytokenservice.svc"
-		if ($wa.IsAdministrationWebApplication) {
-			# Central Admin
-			NavigateTo $url"Lists/HealthReports/AllItems.aspx"
-			NavigateTo $url"_admin/FarmServers.aspx"
-			NavigateTo $url"_admin/Server.aspx"
-			NavigateTo $url"_admin/WebApplicationList.aspx"
-			NavigateTo $url"_admin/ServiceApplications.aspx"
-			
-			# Manage Service Application
-			$sa = Get-SPServiceApplication
-			$links = $sa | ForEach-Object {$_.ManageLink.Url} | Select-Object -Unique
-			foreach ($link in $links) {
-				$ml = $link.TrimStart('/')
-				NavigateTo "$url$ml"
-			}
-		}		
+		
 		if ($allsites) {
 			# Warm Up Individual Site Collections and Sites
  			$sites = (Get-SPSite -WebApplication $wa -Limit ALL)
@@ -192,6 +180,25 @@ Function WarmUp() {
  					NavigateTo $url
  				}
  			}
+		}
+	}
+	
+	# Central Admin
+	$wa = (Get-SPWebApplication -IncludeCentralAdministration) |? {$_.IsAdministrationWebApplication -eq $true}
+	if ($wa) {
+		$url = $wa.Url
+		NavigateTo $url"Lists/HealthReports/AllItems.aspx"
+		NavigateTo $url"_admin/FarmServers.aspx"
+		NavigateTo $url"_admin/Server.aspx"
+		NavigateTo $url"_admin/WebApplicationList.aspx"
+		NavigateTo $url"_admin/ServiceApplications.aspx"
+		
+		# Manage Service Application
+		$sa = Get-SPServiceApplication
+		$links = $sa | ForEach-Object {$_.ManageLink.Url} | Select-Object -Unique
+		foreach ($link in $links) {
+			$ml = $link.TrimStart('/')
+			NavigateTo "$url$ml"
 		}
 	}
 	
