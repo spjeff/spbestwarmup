@@ -158,14 +158,21 @@ Function WarmUp() {
 
 	# Warm up SharePoint web applications
 	Write-Output "Opening Web Applications..."
-	$was = (Get-SPWebApplication -IncludeCentralAdministration | Sort-Object IsAdministrationWebApplication)
-	foreach ($wa in $was) {
-		$url = $wa.Url
+
+	# Accessing the Alternate URl Collection makes sure to warm up all "extended webs" (in this case existing multiple IIS webapps exists for one SharePoint webapp)
+	# If the SharePoint Webs are not extended, then this creates additional unnecessary, but quick iterations, since the webapps are already warmed up under another Alternate URL.
+	$altUrls = (Get-SPAlternateURL)
+	foreach ($altUrl in $altUrls) {
+		$url = $altUrl.PublicUrl
+        	$wa = (Get-SPWebApplication $url -IncludeCentralAdministration | Sort-Object IsAdministrationWebApplication)
+	        
 		NavigateTo $url
 		NavigateTo $url"_api/web"
+        	NavigateTo $url"_api/_trust" #in adfs environments the first user login is slow if this URL is not warmed up 
 		NavigateTo $url"_layouts/viewlsts.aspx"
 		NavigateTo $url"_vti_bin/UserProfileService.asmx"
 		NavigateTo $url"_vti_bin/sts/spsecuritytokenservice.svc"
+
 		if ($wa.IsAdministrationWebApplication) {
 			# Central Admin
 			NavigateTo $url"Lists/HealthReports/AllItems.aspx"
