@@ -289,7 +289,7 @@ Function FetchResources($baseUrl, $resources) {
 
 Function ShowW3WP() {
 	# Total memory used by IIS worker processes
-	$mb = [Math]::Round((Get-Process W3WP -ErrorAction SilentlyContinue | Select-Object pm | Measure-Object pm -Sum).Sum/1MB)
+	$mb = [Math]::Round((Get-Process W3WP -ErrorAction SilentlyContinue | Select-Object workingset64 | Measure-Object workingset64 -Sum).Sum/1MB)
 	WriteLog "Total W3WP = $mb MB" "Green"
 }
 
