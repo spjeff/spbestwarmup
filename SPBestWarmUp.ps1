@@ -48,8 +48,8 @@
 	File Name		:	SPBestWarmUp.ps1
 	Author			:	Jeff Jones  - @spjeff
 	Author			:	Hagen Deike - @hd_ka
-	Version			:	2.2.6
-	Modified		:	11-01-2016
+	Version			:	2.2.7
+	Modified		:	12-11-2016
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -238,7 +238,7 @@ Function WarmUp() {
 }
 
 Function NavigateTo([string] $url) {
-	if ($url.ToUpper().StartsWith("HTTP")) {
+	if ($url.ToUpper().StartsWith("HTTP") -and !$url.EndsWith("/ProfileService.svc","CurrentCultureIgnoreCase")) {
 		Write-Host "  $url" -NoNewLine
 		# WebRequest command line
 		try {
