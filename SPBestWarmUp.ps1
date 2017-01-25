@@ -19,6 +19,9 @@
 .PARAMETER uninstall
 	Typing "SPBestWarmUp.ps1 -uninstall" will remove Task Scheduler job from all machines in the farm.
 	
+.PARAMETER user
+	Typing "SPBestWarmUp.ps1 -user" provides the user name that will be used for the execution of the Task Scheduler job. If this parameter is missing it is assumed that the Task Scheduler job will be run with the current user.
+	
 .PARAMETER skiplog
 	Typing "SPBestWarmUp.ps1 -skiplog" will avoid writing to the EventLog.
 	
@@ -38,6 +41,10 @@
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -f
 	.\SPBestWarmUp.ps1 -installfarm
+
+.EXAMPLE
+	.\SPBestWarmUp.ps1 -f -user "Contoso\JaneDoe"
+	.\SPBestWarmUp.ps1 -installfarm -user "Contoso\JaneDoe"
 
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -u
@@ -76,15 +83,18 @@ param (
 	[Alias("u")]
 	[switch]$uninstall,
 	
-	[Parameter(Mandatory=$False, Position=4, ValueFromPipeline=$false, HelpMessage='Use -skiplog -sl parameter to avoid writing to Event Log')]
+	[Parameter(Mandatory=$False, Position=4, ValueFromPipeline=$false, HelpMessage='Use -user to provide the login of the user that will be used to run the script in the Windows Task Scheduler job')]
+	[string]$user,
+	
+	[Parameter(Mandatory=$False, Position=5, ValueFromPipeline=$false, HelpMessage='Use -skiplog -sl parameter to avoid writing to Event Log')]
 	[Alias("sl")]
 	[switch]$skiplog,
 	
-	[Parameter(Mandatory=$False, Position=5, ValueFromPipeline=$false, HelpMessage='Use -allsites -all parameter to load every site and web (if skipsubwebs parameter is also given, only the root web will be processed)')]
+	[Parameter(Mandatory=$False, Position=6, ValueFromPipeline=$false, HelpMessage='Use -allsites -all parameter to load every site and web (if skipsubwebs parameter is also given, only the root web will be processed)')]
 	[Alias("all")]
 	[switch]$allsites,
 
-	[Parameter(Mandatory=$False, Position=6, ValueFromPipeline=$false, HelpMessage='Use -skipsubwebs -sw parameter to skip subwebs of each site collection and to process only the root web')]
+	[Parameter(Mandatory=$False, Position=7, ValueFromPipeline=$false, HelpMessage='Use -skipsubwebs -sw parameter to skip subwebs of each site collection and to process only the root web')]
 	[Alias("sw")]
 	[switch]$skipsubwebs
 )
@@ -92,8 +102,10 @@ param (
 Function Installer() {
 	# Add to Task Scheduler
 	Write-Output "  Installing to Task Scheduler..."
-	$user = $ENV:USERDOMAIN + "\"+$ENV:USERNAME
-	Write-Output "  Current User: $user"
+	if(!$user) {
+		$user = $ENV:USERDOMAIN + "\"+$ENV:USERNAME
+	}
+	Write-Output "  User for Task Scheduler job: $user"
 	
 	# Attempt to detect password from IIS Pool (if current user is local admin and farm account)
 	$appPools = Get-CimInstance -Namespace "root/MicrosoftIISv2" -ClassName "IIsApplicationPoolSetting" -Property Name, WAMUserName, WAMUserPass | Select-Object WAMUserName, WAMUserPass
