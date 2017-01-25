@@ -3,8 +3,7 @@
 	Warm up SharePoint IIS W3WP memory cache by loading pages from WebRequest
 
 .DESCRIPTION
-	Loads the full page so resources like CSS, JS, and images are included.  Please modify lines 331-345
-	to suit your portal content design (popular URLs, custom pages, etc.)
+	Loads the full page so resources like CSS, JS, and images are included. Please modify lines 374-395 to suit your portal content design (popular URLs, custom pages, etc.)
 	
 	Comments and suggestions always welcome!  Please, use the issues panel at the project page.
 
@@ -12,9 +11,7 @@
 	A collection of url that will be added to the list of websites the script will fetch.
 	
 .PARAMETER install
-	Typing "SPBestWarmUp.ps1 -install" will create a local Task Scheduler job under credentials of the
-	current user.  Job runs every 60 minutes on the hour to help automatically populate cache.  
-	Keeps cache full even after IIS daily recycle, WSP deployment, reboot, or other system events.
+	Typing "SPBestWarmUp.ps1 -install" will create a local Task Scheduler job under credentials of the current user. Job runs every 60 minutes on the hour to help automatically populate cache. Keeps cache full even after IIS daily recycle, WSP deployment, reboot, or other system events.
 
 .PARAMETER installfarm
 	Typing "SPBestWarmUp.ps1 -farminstall" will create a Task Scheduler job on all machines in the farm.
@@ -26,7 +23,10 @@
 	Typing "SPBestWarmUp.ps1 -skiplog" will avoid writing to the EventLog.
 	
 .PARAMETER allsites
-	Typing "SPBestWarmUp.ps1 -allsites" will load every site and web URL.
+	Typing "SPBestWarmUp.ps1 -allsites" will load every site and web URL. If the parameter skipsubwebs is used, only the root web of each site collection will be processed.
+
+.PARAMETER skipsubwebs
+	Typing "SPBestWarmUp.ps1 -skipsubwebs" will skip the subwebs of each site collection and only process the root web of the site collection.
 	
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -url "http://domainA.tld","http://domainB.tld"
@@ -45,11 +45,12 @@
 
 	
 .NOTES  
-	File Name		:	SPBestWarmUp.ps1
-	Author			:	Jeff Jones  - @spjeff
-	Author			:	Hagen Deike - @hd_ka
-	Version			:	2.2.7
-	Modified		:	12-11-2016
+	File Name:  SPBestWarmUp.ps1
+	Author   :  Jeff Jones  - @spjeff
+	Author   :  Hagen Deike - @hd_ka
+	Author   :  Lars Fernhomberg
+	Version  :  2.3.0
+	Modified :  2017-01-25
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -79,9 +80,13 @@ param (
 	[Alias("sl")]
 	[switch]$skiplog,
 	
-	[Parameter(Mandatory=$False, Position=5, ValueFromPipeline=$false, HelpMessage='Use -allsites -all parameter to load every site and web')]
+	[Parameter(Mandatory=$False, Position=5, ValueFromPipeline=$false, HelpMessage='Use -allsites -all parameter to load every site and web (if skipsubwebs parameter is also given, only the root web will be processed)')]
 	[Alias("all")]
-	[switch]$allsites
+	[switch]$allsites,
+
+	[Parameter(Mandatory=$False, Position=6, ValueFromPipeline=$false, HelpMessage='Use -skipsubwebs -sw parameter to skip subwebs of each site collection and to process only the root web')]
+	[Alias("sw")]
+	[switch]$skipsubwebs
 )
 
 Function Installer() {
@@ -108,6 +113,7 @@ Function Installer() {
 	
 	# Task Scheduler command
 	if ($allsites) {$suffix += " -allsites"}
+	if ($skipsubwebs) {$suffix += " -skipsubwebs"}
 	if ($skiplog) {$suffix += " -skiplog"}
 	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$cmdpath$suffix'"""
 	
@@ -175,12 +181,20 @@ Function WarmUp() {
 		# Warm Up Individual Site Collections and Sites
 		if ($allsites) {
  			$sites = (Get-SPSite -WebApplication $wa -Limit ALL)
- 			foreach($site in $sites){
- 				$webs = (Get-SPWeb -Site $site -Limit ALL)
- 				foreach($web in $webs){
- 					$url = $web.Url
- 					NavigateTo $url
- 				}
+ 			foreach($site in $sites) {
+				if($skipsubwebs)
+				{
+					$url = $site.RootWeb.Url
+					NavigateTo $url
+				}
+				else
+				{
+					$webs = (Get-SPWeb -Site $site -Limit ALL)
+					foreach($web in $webs){
+						$url = $web.Url
+						NavigateTo $url
+					}
+				}
  			}
 		}
 		
@@ -326,7 +340,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.2.4  (last updated 05-13-2016)`n------`n"
+WriteLog "SPBestWarmUp v2.3.0  (last updated 2017-01-25)`n------`n"
 
 # Check Permission Level
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
