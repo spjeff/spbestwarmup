@@ -30,7 +30,10 @@
 
 .PARAMETER skipsubwebs
 	Typing "SPBestWarmUp.ps1 -skipsubwebs" will skip the subwebs of each site collection and only process the root web of the site collection.
-	
+
+.PARAMETER skipadmincheck
+	Typing "SPBestWarmUp.ps1 -noadmincheck" will skip checking of the current user is a local administrator. Local administrator rights are necessary for the installation of the Windows Task Scheduler but not necessary for simply running the warmup script.
+
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -url "http://domainA.tld","http://domainB.tld"
 
@@ -96,7 +99,11 @@ param (
 
 	[Parameter(Mandatory=$False, Position=7, ValueFromPipeline=$false, HelpMessage='Use -skipsubwebs -sw parameter to skip subwebs of each site collection and to process only the root web')]
 	[Alias("sw")]
-	[switch]$skipsubwebs
+	[switch]$skipsubwebs,
+
+	[Parameter(Mandatory=$False, Position=8, ValueFromPipeline=$false, HelpMessage='Use -skipadmincheck -sac parameter to skip checking if the current user is an administrator')]
+	[Alias("sac")]
+	[switch]$skipadmincheck
 )
 
 Function Installer() {
@@ -124,10 +131,11 @@ Function Installer() {
 	}
 	
 	# Task Scheduler command
+	$suffix += " -skipadmincheck"	#We do not need administrative rights on local machines to check the farm
 	if ($allsites) {$suffix += " -allsites"}
 	if ($skipsubwebs) {$suffix += " -skipsubwebs"}
 	if ($skiplog) {$suffix += " -skiplog"}
-	$cmd = """PowerShell.exe -ExecutionPolicy Bypass '$cmdpath$suffix'"""
+	$cmd = "-ExecutionPolicy Bypass ""$cmdpath$suffix"""
 	
 	# Target machines
 	$machines = @()
@@ -145,8 +153,21 @@ Function Installer() {
 			# Delete task
 			Write-Output "SCHTASKS DELETE on $_"
 			schtasks /s $_ /delete /tn "SPBestWarmUp" /f
-			Write-Host "  [OK]" -Fore Green
+			WriteLog "  [OK]" Green
 		} else {
+			$xmlCmdPath = $cmdPath.Replace(".ps1", ".xml")
+			# Ensure that XML file is present
+			if(!(Test-Path $xmlCmdPath)) {
+				Write-Warning """$($xmlCmdPath)"" is missing. Cannot create timer job without missing file."
+				return
+			}
+
+			# Update xml file
+			$xml = [xml](Get-Content $xmlCmdPath)
+			$xml.Task.Principals.Principal.UserId = $user
+			$xml.Task.Actions.Exec.Arguments = $cmd
+			$xml.Save($xmlCmdPath)
+
 			# Copy local file to remote UNC path machine
 			Write-Output "SCHTASKS CREATE on $_"
 			if ($_ -ne "localhost" -and $_ -ne $ENV:COMPUTERNAME) {
@@ -155,14 +176,16 @@ Function Installer() {
 				$match =  Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
 				if ($match) {
 					$dest = "\\" + $_ + "\" + $drive + "$" + $dest.substring(2,$dest.length-2)
+					$xmlDest = $dest.Replace(".ps1", ".xml")
 					mkdir (Split-Path $dest) -ErrorAction SilentlyContinue | Out-Null
 					Write-Output $dest
 					Copy-Item $cmdpath $dest -Confirm:$false
+					Copy-Item $xmlCmdPath $xmlDest -Confirm:$false
 				}
 			}
 			# Create task
-			schtasks /s $_ /create /tn "SPBestWarmUp" /ru $user /rp $pass /rl highest /sc daily /st 01:00 /ri 60 /du 24:00 /tr $cmd /f
-			Write-Host "  [OK]" -Fore Green
+			schtasks /s $_ /create /tn "SPBestWarmUp" /ru $user /rp $pass /xml $xmlCmdPath
+			WriteLog "  [OK]"  Green
 		}
 	}
 }
@@ -182,6 +205,9 @@ Function WarmUp() {
 	foreach ($wa in $was) {
 		foreach ($alt in $wa.AlternateUrls) {
 			$url = $alt.PublicUrl
+			if(!$url.EndsWith("/")) {
+				$url = $url + "/"
+			}
 			NavigateTo $url
 			NavigateTo $url"_api/web"
 			NavigateTo $url"_api/_trust" # for ADFS, first user login
@@ -265,7 +291,7 @@ Function WarmUp() {
 
 Function NavigateTo([string] $url) {
 	if ($url.ToUpper().StartsWith("HTTP") -and !$url.EndsWith("/ProfileService.svc","CurrentCultureIgnoreCase")) {
-		Write-Host "  $url" -NoNewLine
+		WriteLog "  $url" -NoNewLine
 		# WebRequest command line
 		try {
 			$wr = Invoke-WebRequest -Uri $url -UseBasicParsing -UseDefaultCredentials -TimeoutSec 120
@@ -275,7 +301,7 @@ Function NavigateTo([string] $url) {
 		} catch {
 			$httpCode = $_.Exception.Response.StatusCode.Value__
 			if ($httpCode) {
-				Write-Host "   [$httpCode]" -Fore Yellow
+				WriteLog "   [$httpCode]" Yellow
 			} else {
 				Write-Host " "
 			}
@@ -355,7 +381,7 @@ CreateLog
 WriteLog "SPBestWarmUp v2.3.0  (last updated 2017-01-25)`n------`n"
 
 # Check Permission Level
-if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
 	Write-Warning "You do not have elevated Administrator rights to run this script.`nPlease re-run as Administrator."
 	break
 } else {
