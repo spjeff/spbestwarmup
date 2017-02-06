@@ -68,23 +68,23 @@
 
 [CmdletBinding()]
 param (
-	[Parameter(Mandatory=$False, Position=0, ValueFromPipeline=$false, HelpMessage='A collection of URLs that will be fetched too')]
-	[Alias("url")]
-	[ValidateNotNullOrEmpty()]
-	[ValidatePattern("https?:\/\/\D+")]
-	[string[]]$cmdurl,
+    [Parameter(Mandatory=$False, Position=0, ValueFromPipeline=$false, HelpMessage='A collection of URLs that will be fetched too')]
+    [Alias("url")]
+    [ValidateNotNullOrEmpty()]
+    [ValidatePattern("https?:\/\/\D+")]
+    [string[]]$cmdurl,
 
-	[Parameter(Mandatory=$False, Position=1, ValueFromPipeline=$false, HelpMessage='Use -install -i parameter to add script to Windows Task Scheduler on local machine')]
-	[Alias("i")]
-	[switch]$install,
+    [Parameter(Mandatory=$False, Position=1, ValueFromPipeline=$false, HelpMessage='Use -install -i parameter to add script to Windows Task Scheduler on local machine')]
+    [Alias("i")]
+    [switch]$install,
 	
-	[Parameter(Mandatory=$False, Position=2, ValueFromPipeline=$false, HelpMessage='Use -installfarm -f parameter to add script to Windows Task Scheduler on all farm machines')]
-	[Alias("f")]
-	[switch]$installfarm,
+    [Parameter(Mandatory=$False, Position=2, ValueFromPipeline=$false, HelpMessage='Use -installfarm -f parameter to add script to Windows Task Scheduler on all farm machines')]
+    [Alias("f")]
+    [switch]$installfarm,
 	
-	[Parameter(Mandatory=$False, Position=3, ValueFromPipeline=$false, HelpMessage='Use -uninstall -u parameter to remove Windows Task Scheduler job')]
-	[Alias("u")]
-	[switch]$uninstall,
+    [Parameter(Mandatory=$False, Position=3, ValueFromPipeline=$false, HelpMessage='Use -uninstall -u parameter to remove Windows Task Scheduler job')]
+    [Alias("u")]
+    [switch]$uninstall,
 	
 	[Parameter(Mandatory=$False, Position=4, ValueFromPipeline=$false, HelpMessage='Use -user to provide the login of the user that will be used to run the script in the Windows Task Scheduler job')]
 	[string]$user,
@@ -114,21 +114,21 @@ Function Installer() {
 	}
 	Write-Output "  User for Task Scheduler job: $user"
 	
-	# Attempt to detect password from IIS Pool (if current user is local admin and farm account)
-	$appPools = Get-CimInstance -Namespace "root/MicrosoftIISv2" -ClassName "IIsApplicationPoolSetting" -Property Name, WAMUserName, WAMUserPass | Select-Object WAMUserName, WAMUserPass
-	foreach ($pool in $appPools) {			
-		if ($pool.WAMUserName -like $user) {
-			$pass = $pool.WAMUserPass
-			if ($pass) {
-				break
-			}
-		}
-	}
+    # Attempt to detect password from IIS Pool (if current user is local admin and farm account)
+    $appPools = Get-CimInstance -Namespace "root/MicrosoftIISv2" -ClassName "IIsApplicationPoolSetting" -Property Name, WAMUserName, WAMUserPass | Select-Object WAMUserName, WAMUserPass
+    foreach ($pool in $appPools) {			
+        if ($pool.WAMUserName -like $user) {
+            $pass = $pool.WAMUserPass
+            if ($pass) {
+                break
+            }
+        }
+    }
 	
-	# Manual input if auto detect failed
-	if (!$pass) {
-		$pass = Read-Host "Enter password for $user "
-	}
+    # Manual input if auto detect failed
+    if (!$pass) {
+        $pass = Read-Host "Enter password for $user "
+    }
 	
 	# Task Scheduler command
 	$suffix += " -skipadmincheck"	#We do not need administrative rights on local machines to check the farm
@@ -191,14 +191,14 @@ Function Installer() {
 }
 
 Function WarmUp() {
-	# Load plugin
-	Add-PSSnapIn Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
+    # Load plugin
+    Add-PSSnapIn Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
 
-	# Warm up CMD parameter URLs
-	$cmdurl | ForEach-Object {NavigateTo $_}
+    # Warm up CMD parameter URLs
+    $cmdurl | ForEach-Object {NavigateTo $_}
 
-	# Warm up SharePoint web applications
-	Write-Output "Opening Web Applications..."
+    # Warm up SharePoint web applications
+    Write-Output "Opening Web Applications..."
 
 	# Accessing the Alternate URls to warm up all "extended webs" (i.e. multiple IIS websites exists for one SharePoint webapp)
 	$was = Get-SPWebApplication -IncludeCentralAdministration
@@ -236,57 +236,57 @@ Function WarmUp() {
  			}
 		}
 		
-		# Central Admin
-		if ($wa.IsAdministrationWebApplication) {
-			$url = $wa.Url
-			NavigateTo $url"Lists/HealthReports/AllItems.aspx"
-			NavigateTo $url"_admin/FarmServers.aspx"
-			NavigateTo $url"_admin/Server.aspx"
-			NavigateTo $url"_admin/WebApplicationList.aspx"
-			NavigateTo $url"_admin/ServiceApplications.aspx"
+        # Central Admin
+        if ($wa.IsAdministrationWebApplication) {
+            $url = $wa.Url
+            NavigateTo $url"Lists/HealthReports/AllItems.aspx"
+            NavigateTo $url"_admin/FarmServers.aspx"
+            NavigateTo $url"_admin/Server.aspx"
+            NavigateTo $url"_admin/WebApplicationList.aspx"
+            NavigateTo $url"_admin/ServiceApplications.aspx"
 			
-			# Manage Service Application
-			$sa = Get-SPServiceApplication
-			$links = $sa | ForEach-Object {$_.ManageLink.Url} | Select-Object -Unique
-			foreach ($link in $links) {
-				$ml = $link.TrimStart('/')
-				NavigateTo "$url$ml"
-			}
-		}
-	}
+            # Manage Service Application
+            $sa = Get-SPServiceApplication
+            $links = $sa | ForEach-Object {$_.ManageLink.Url} | Select-Object -Unique
+            foreach ($link in $links) {
+                $ml = $link.TrimStart('/')
+                NavigateTo "$url$ml"
+            }
+        }
+    }
 	
-	# Warm up Service Applications
-	Get-SPServiceApplication | ForEach-Object {$_.EndPoints | ForEach-Object {$_.ListenUris | ForEach-Object {NavigateTo $_.AbsoluteUri}}}
+    # Warm up Service Applications
+    Get-SPServiceApplication | ForEach-Object {$_.EndPoints | ForEach-Object {$_.ListenUris | ForEach-Object {NavigateTo $_.AbsoluteUri}}}
 
-	# Warm up Project Server
-	Write-Output "Opening Project Server PWAs..."
-	if ((Get-Command Get-SPProjectWebInstance -ErrorAction SilentlyContinue).Count -gt 0) {
-		Get-SPProjectWebInstance | ForEach-Object {
-			# Thanks to Eugene Pavlikov for the snippet
-			$url = ($_.Url).AbsoluteUri + "/"
+    # Warm up Project Server
+    Write-Output "Opening Project Server PWAs..."
+    if ((Get-Command Get-SPProjectWebInstance -ErrorAction SilentlyContinue).Count -gt 0) {
+        Get-SPProjectWebInstance | ForEach-Object {
+            # Thanks to Eugene Pavlikov for the snippet
+            $url = ($_.Url).AbsoluteUri + "/"
 		
-			NavigateTo $url
-			NavigateTo ($url + "_layouts/viewlsts.aspx")
-			NavigateTo ($url + "_vti_bin/UserProfileService.asmx")
-			NavigateTo ($url + "_vti_bin/sts/spsecuritytokenservice.svc")
-			NavigateTo ($url + "Projects.aspx")
-			NavigateTo ($url + "Approvals.aspx")
-			NavigateTo ($url + "Tasks.aspx")
-			NavigateTo ($url + "Resources.aspx")
-			NavigateTo ($url + "ProjectBICenter/Pages/Default.aspx")
-			NavigateTo ($url + "_layouts/15/pwa/Admin/Admin.aspx")
-		}
-	}
+            NavigateTo $url
+            NavigateTo ($url + "_layouts/viewlsts.aspx")
+            NavigateTo ($url + "_vti_bin/UserProfileService.asmx")
+            NavigateTo ($url + "_vti_bin/sts/spsecuritytokenservice.svc")
+            NavigateTo ($url + "Projects.aspx")
+            NavigateTo ($url + "Approvals.aspx")
+            NavigateTo ($url + "Tasks.aspx")
+            NavigateTo ($url + "Resources.aspx")
+            NavigateTo ($url + "ProjectBICenter/Pages/Default.aspx")
+            NavigateTo ($url + "_layouts/15/pwa/Admin/Admin.aspx")
+        }
+    }
 
-	# Warm up Topology
-	NavigateTo "http://localhost:32843/Topology/topology.svc"
+    # Warm up Topology
+    NavigateTo "http://localhost:32843/Topology/topology.svc"
 	
-	# Warm up Host Name Site Collections (HNSC)
-	Write-Output "Opening Host Name Site Collections (HNSC)..."
-	$hnsc = Get-SPSite -Limit All | Where-Object {$_.HostHeaderIsSiteName -eq $true} | Select-Object Url
-	foreach ($sc in $hnsc) {
-		NavigateTo $sc.Url
-	}
+    # Warm up Host Name Site Collections (HNSC)
+    Write-Output "Opening Host Name Site Collections (HNSC)..."
+    $hnsc = Get-SPSite -Limit All | Where-Object {$_.HostHeaderIsSiteName -eq $true} | Select-Object Url
+    foreach ($sc in $hnsc) {
+        NavigateTo $sc.Url
+    }
 }
 
 Function NavigateTo([string] $url) {
@@ -310,70 +310,70 @@ Function NavigateTo([string] $url) {
 }
 
 Function FetchResources($baseUrl, $resources) {
-	# Download additional HTTP files
-	[uri]$uri = $baseUrl
-	$rootUrl = $uri.Scheme + "://" + $uri.Authority
+    # Download additional HTTP files
+    [uri]$uri = $baseUrl
+    $rootUrl = $uri.Scheme + "://" + $uri.Authority
 	
-	# Loop
-	$counter = 0
-	foreach ($res in $resources) {
-		# Support both abosolute and relative URLs
-		$resUrl  = $res.src
-		if ($resUrl.ToUpper().Contains("HTTP")) {
-			$fetchUrl = $res.src
-		} else {
-			if (!$resUrl.StartsWith("/")) {
-				$resUrl = "/" + $resUrl
-			}
-			$fetchUrl = $rootUrl + $resUrl
-		}
+    # Loop
+    $counter = 0
+    foreach ($res in $resources) {
+        # Support both abosolute and relative URLs
+        $resUrl  = $res.src
+        if ($resUrl.ToUpper().Contains("HTTP")) {
+            $fetchUrl = $res.src
+        } else {
+            if (!$resUrl.StartsWith("/")) {
+                $resUrl = "/" + $resUrl
+            }
+            $fetchUrl = $rootUrl + $resUrl
+        }
 
-		# Progress
-		Write-Progress -Activity "Opening " -Status $fetchUrl -PercentComplete (($counter/$resources.Count)*100)
-		$counter++
+        # Progress
+        Write-Progress -Activity "Opening " -Status $fetchUrl -PercentComplete (($counter/$resources.Count)*100)
+        $counter++
 		
-		# Execute
-		$resp = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120
-		Write-Host "." -NoNewLine
-	}
-	Write-Progress -Activity "Completed" -Completed
+        # Execute
+        $resp = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120
+        Write-Host "." -NoNewLine
+    }
+    Write-Progress -Activity "Completed" -Completed
 }
 
 Function ShowW3WP() {
-	# Total memory used by IIS worker processes
-	$mb = [Math]::Round((Get-Process W3WP -ErrorAction SilentlyContinue | Select-Object workingset64 | Measure-Object workingset64 -Sum).Sum/1MB)
-	WriteLog "Total W3WP = $mb MB" "Green"
+    # Total memory used by IIS worker processes
+    $mb = [Math]::Round((Get-Process W3WP -ErrorAction SilentlyContinue | Select-Object workingset64 | Measure-Object workingset64 -Sum).Sum/1MB)
+    WriteLog "Total W3WP = $mb MB" "Green"
 }
 
 Function CreateLog() {
-	# EventLog - create source if missing
-	if (!(Get-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue)) {
-		New-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue | Out-Null
-	}
+    # EventLog - create source if missing
+    if (!(Get-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue)) {
+        New-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue | Out-Null
+    }
 }
 
 Function WriteLog($text, $color) {
-	$global:msg += "`n$text"
-	if ($color) {
-		Write-Host $text -Fore $color
-	} else {
-		Write-Output $text
-	}
+    $global:msg += "`n$text"
+    if ($color) {
+        Write-Host $text -Fore $color
+    } else {
+        Write-Output $text
+    }
 }
 
 Function SaveLog($id, $txt, $error) {
-	# EventLog
-	if (!$skiplog) {
-		if (!$error) {
-			# Success
-			$global:msg += $txt
-			Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId $id -Message $global:msg
-		} else {      
-			# Error
-			$global:msg += $error[0].Exception.ToString() + "`r`n" + $error[0].ErrorDetails.Message
-			Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $global:msg
-		}
-	}
+    # EventLog
+    if (!$skiplog) {
+        if (!$error) {
+            # Success
+            $global:msg += $txt
+            Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId $id -Message $global:msg
+        } else {      
+            # Error
+            $global:msg += $error[0].Exception.ToString() + "`r`n" + $error[0].ErrorDetails.Message
+            Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $global:msg
+        }
+    }
 }
 
 # Main
@@ -385,29 +385,29 @@ if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Prin
 	Write-Warning "You do not have elevated Administrator rights to run this script.`nPlease re-run as Administrator."
 	break
 } else {
-	try {
-		# SharePoint cmdlets
-		Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
+    try {
+        # SharePoint cmdlets
+        Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
 
-		# Task Scheduler
-		$cmdpath = $MyInvocation.MyCommand.Path
-		$tasks = schtasks /query /fo csv | ConvertFrom-Csv
-		$spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
-		if (!$spb -and !$install -and !$installfarm) {
-			Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
-		}
-		if ($install -or $installfarm -or $uninstall) {
-			Installer
-			SaveLog 2 "Installed to Task Scheduler"
-		}
-		if ($uninstall) {
-			break
-		}
+        # Task Scheduler
+        $cmdpath = $MyInvocation.MyCommand.Path
+        $tasks = schtasks /query /fo csv | ConvertFrom-Csv
+        $spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
+        if (!$spb -and !$install -and !$installfarm) {
+            Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
+        }
+        if ($install -or $installfarm -or $uninstall) {
+            Installer
+            SaveLog 2 "Installed to Task Scheduler"
+        }
+        if ($uninstall) {
+            break
+        }
 		
-		# Core
-		ShowW3WP
-		WarmUp
-		ShowW3WP
+        # Core
+        ShowW3WP
+        WarmUp
+        ShowW3WP
 		
 		# Custom URLs - Add your own below
 		# Looks at Central Admin Site Title to support many farms with a single script
