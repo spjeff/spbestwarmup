@@ -66,6 +66,8 @@
 	https://github.com/spjeff/spbestwarmup
 #>
 
+#Requires -Version 3.0
+
 [CmdletBinding()]
 param (
     [Parameter(Mandatory=$False, Position=0, ValueFromPipeline=$false, HelpMessage='A collection of URLs that will be fetched too')]
