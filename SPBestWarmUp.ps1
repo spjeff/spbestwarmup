@@ -32,7 +32,7 @@
 	Typing "SPBestWarmUp.ps1 -skipsubwebs" will skip the subwebs of each site collection and only process the root web of the site collection.
 
 .PARAMETER skipadmincheck
-	Typing "SPBestWarmUp.ps1 -noadmincheck" will skip checking of the current user is a local administrator. Local administrator rights are necessary for the installation of the Windows Task Scheduler but not necessary for simply running the warmup script.
+	Typing "SPBestWarmUp.ps1 -skipadmincheck" will skip checking of the current user is a local administrator. Local administrator rights are necessary for the installation of the Windows Task Scheduler but not necessary for simply running the warmup script.
 
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -url "http://domainA.tld","http://domainB.tld"
