@@ -117,21 +117,16 @@ Function Installer() {
 	Write-Output "  User for Task Scheduler job: $user"
 	
     # Attempt to detect password from IIS Pool (if current user is local admin and farm account)
-    try{
-		$appPools = Get-CimInstance -Namespace "root/MicrosoftIISv2" -ClassName "IIsApplicationPoolSetting" -Property Name, WAMUserName, WAMUserPass | Select-Object WAMUserName, WAMUserPass
-		foreach ($pool in $appPools) {			
-			if ($pool.WAMUserName -like $user) {
-				$pass = $pool.WAMUserPass
-				if ($pass) {
-					break
-				}
-			}
-		}
-	}
-	catch{
-		#Password auto-detect failed.   Carry on, and prompt the user for the password.
-	}
-
+    $appPools = Get-CimInstance -Namespace "root/MicrosoftIISv2" -ClassName "IIsApplicationPoolSetting" -Property Name, WAMUserName, WAMUserPass | Select-Object WAMUserName, WAMUserPass
+    foreach ($pool in $appPools) {			
+        if ($pool.WAMUserName -like $user) {
+            $pass = $pool.WAMUserPass
+            if ($pass) {
+                break
+            }
+        }
+    }
+	
     # Manual input if auto detect failed
     if (!$pass) {
         $pass = Read-Host "Enter password for $user "
