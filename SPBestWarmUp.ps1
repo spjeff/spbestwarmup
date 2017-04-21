@@ -118,7 +118,7 @@ Function Installer() {
 	Write-Output "  User for Task Scheduler job: $user"
 	
     # Attempt to detect password from IIS Pool (if current user is local admin and farm account)
-    $appPools = Get-CimInstance -Namespace "root/MicrosoftIISv2" -ClassName "IIsApplicationPoolSetting" -Property Name, WAMUserName, WAMUserPass | Select-Object WAMUserName, WAMUserPass
+    $appPools = Get-WMIObject -Namespace "root/MicrosoftIISv2" -Class "IIsApplicationPoolSetting" | Select-Object WAMUserName, WAMUserPass
     foreach ($pool in $appPools) {			
         if ($pool.WAMUserName -like $user) {
             $pass = $pool.WAMUserPass
@@ -176,7 +176,7 @@ Function Installer() {
 			if ($_ -ne "localhost" -and $_ -ne $ENV:COMPUTERNAME) {
 				$dest = $cmdpath
 				$drive = $dest.substring(0,1)
-				$match =  Get-CimInstance -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq ($drive+":") -and $_.DriveType -ne 4}
+				$match =  Get-WMIObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq ($drive+":") -and $_.DriveType -eq 3}
 				if ($match) {
 					$dest = "\\" + $_ + "\" + $drive + "$" + $dest.substring(2,$dest.length-2)
 					$xmlDest = $dest.Replace(".ps1", ".xml")
