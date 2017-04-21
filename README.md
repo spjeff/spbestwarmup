@@ -22,6 +22,7 @@ I used several different warmup scripts. All worked OK but each seemed to lack f
 
 ## Prerequisites
 * PowerShell 3.0+
+
   PowerShell 5.1 can be installed on Server 2008R2: [https://msdn.microsoft.com/en-us/powershell/wmf/5.1/install-configure](https://msdn.microsoft.com/en-us/powershell/wmf/5.1/install-configure)
 
 ## Quick Start
