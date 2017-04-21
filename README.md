@@ -20,6 +20,10 @@ I used several different warmup scripts. All worked OK but each seemed to lack f
 * Display W3WP total #MB before and after
 * Excellent blog post by [@hd_ka](https://twitter.com/hd_ka) at [http://blog.greenbrain.de/2014/10/fire-up-those-caches.html](http://blog.greenbrain.de/2014/10/fire-up-those-caches.html)
 
+## Prerequisites
+* PowerShell 3.0+
+  PowerShell 5.1 can be installed on Server 2008R2: [https://msdn.microsoft.com/en-us/powershell/wmf/5.1/install-configure](https://msdn.microsoft.com/en-us/powershell/wmf/5.1/install-configure)
+
 ## Quick Start
 * Download `SPBestWarmup.ps1`
 * Copy `SPBestWarmup.ps1` to one SharePoint web front end (WFE)
