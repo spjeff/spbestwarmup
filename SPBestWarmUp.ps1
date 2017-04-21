@@ -14,7 +14,7 @@
 	Typing "SPBestWarmUp.ps1 -install" will create a local Task Scheduler job under credentials of the current user. Job runs every 60 minutes on the hour to help automatically populate cache. Keeps cache full even after IIS daily recycle, WSP deployment, reboot, or other system events.
 
 .PARAMETER installfarm
-	Typing "SPBestWarmUp.ps1 -farminstall" will create a Task Scheduler job on all machines in the farm.
+	Typing "SPBestWarmUp.ps1 -installfarm" will create a Task Scheduler job on all machines in the farm.
 
 .PARAMETER uninstall
 	Typing "SPBestWarmUp.ps1 -uninstall" will remove Task Scheduler job from all machines in the farm.
