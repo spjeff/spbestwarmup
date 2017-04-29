@@ -60,8 +60,8 @@
 	Author   :  Hagen Deike - @hd_ka
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
-	Version  :  2.4.0
-	Modified :  2017-04-21
+	Version  :  2.4.1
+	Modified :  2017-04-29
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -379,7 +379,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.0  (last updated 2017-04-21)`n------`n"
+WriteLog "SPBestWarmUp v2.4.1  (last updated 2017-04-29)`n------`n"
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
