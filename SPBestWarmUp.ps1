@@ -60,8 +60,8 @@
 	Author   :  Hagen Deike - @hd_ka
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
-	Version  :  2.4.2
-	Modified :  2017-06-09
+	Version  :  2.4.3
+	Modified :  2017-06-12
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -215,7 +215,7 @@ Function WarmUp() {
 			NavigateTo $url"_layouts/viewlsts.aspx"
 			NavigateTo $url"_vti_bin/UserProfileService.asmx"
 			NavigateTo $url"_vti_bin/sts/spsecuritytokenservice.svc"
-			NavigateTo $url"/_api/search/query?querytext='sharepoint'"
+			NavigateTo $url"/_api/search/query?querytext='warmup'"
 		}
 		
 		# Warm Up Individual Site Collections and Sites
