@@ -60,8 +60,8 @@
 	Author   :  Hagen Deike - @hd_ka
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
-	Version  :  2.4.3
-	Modified :  2017-06-12
+	Version  :  2.4.4
+	Modified :  2017-06-13
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -372,7 +372,8 @@ Function SaveLog($id, $txt, $error) {
             Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId $id -Message $global:msg
         } else {      
             # Error
-            $global:msg += $error[0].Exception.ToString() + "`r`n" + $error[0].ErrorDetails.Message
+			$global:msg += "ERROR`n"
+            $global:msg += $error.Message + "`n" + $error.ItemName
             Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $global:msg
         }
     }
@@ -380,7 +381,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.1  (last updated 2017-04-29)`n------`n"
+WriteLog "SPBestWarmUp v2.4.4  (last updated 2017-06-13)`n------`n"
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -435,6 +436,6 @@ if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Prin
 		}
 		SaveLog 1 "Operation completed successfully"
 	} catch {
-		SaveLog 201 "ERROR" $error
+		SaveLog 101 "ERROR" $_.Exception
 	}
 }
