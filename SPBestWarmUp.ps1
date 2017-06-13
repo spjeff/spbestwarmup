@@ -60,7 +60,7 @@
 	Author   :  Hagen Deike - @hd_ka
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
-	Version  :  2.4.4
+	Version  :  2.4.5
 	Modified :  2017-06-13
 
 .LINK
@@ -104,7 +104,11 @@ param (
 
 	[Parameter(Mandatory=$False, Position=8, ValueFromPipeline=$false, HelpMessage='Use -skipadmincheck -sac parameter to skip checking if the current user is an administrator')]
 	[Alias("sac")]
-	[switch]$skipadmincheck
+	[switch]$skipadmincheck,
+
+	[Parameter(Mandatory=$False, Position=9, ValueFromPipeline=$false, HelpMessage='Use -skipserviceapps -ssa parameter to skip warmin up of Service Application Endpoints URLs')]
+	[Alias("ssa")]
+	[switch]$skipserviceapps
 )
 
 Function Installer() {
@@ -258,7 +262,9 @@ Function WarmUp() {
     }
 	
     # Warm up Service Applications
-    Get-SPServiceApplication | ForEach-Object {$_.EndPoints | ForEach-Object {$_.ListenUris | ForEach-Object {NavigateTo $_.AbsoluteUri}}}
+	if (!$skipserviceapps) {
+    	Get-SPServiceApplication | ForEach-Object {$_.EndPoints | ForEach-Object {$_.ListenUris | ForEach-Object {NavigateTo $_.AbsoluteUri}}}
+	}
 
     # Warm up Project Server
     Write-Output "Opening Project Server PWAs..."
@@ -398,7 +404,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.4  (last updated 2017-06-13)`n------`n"
+WriteLog "SPBestWarmUp v2.4.5  (last updated 2017-06-13)`n------`n"
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
