@@ -289,6 +289,23 @@ Function WarmUp() {
     foreach ($sc in $hnsc) {
         NavigateTo $sc.Url
     }
+
+	# Warm up Office Online Server (OOS)
+	$remoteuis = "m,o,oh,op,p,we,wv,x".Split(",")
+	$services = "diskcache/DiskCache.svc,dss/DocumentSessionService.svc,ecs/ExcelService.asmx,farmstatemanager/FarmStateManager.svc,metb/BroadcastStateService.svc,pptc/Viewing.svc,ppte/Editing.svch,wdss/WordDocumentSessionService.svc,wess/WordSaveService.svc,wvc/Conversion.svc".Split(",")
+
+	# Loop per WOPI
+	$wopis = Get-SPWOPIBinding | Select-Object ServerName -Unique
+	foreach ($w in $wopis) {
+		foreach ($r in $remoteuis) {
+			Navigate "http://$w/$e/RemoteUIs.ashx"
+			Navigate "https://$w/$e/RemoteUIs.ashx"
+		}
+		foreach ($s in $services) {
+			Navigate "http://$w"+":809/$s/"
+			Navigate "https://$w"+":810/$s/"
+		}
+	}
 }
 
 Function NavigateTo([string] $url) {
@@ -335,7 +352,7 @@ Function FetchResources($baseUrl, $resources) {
         $counter++
 		
         # Execute
-        $resp = Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120
+        Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120 | Out-Null
         Write-Host "." -NoNewLine
     }
     Write-Progress -Activity "Completed" -Completed
