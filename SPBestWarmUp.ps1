@@ -60,8 +60,8 @@
 	Author   :  Hagen Deike - @hd_ka
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
-	Version  :  2.4.6
-	Modified :  2017-06-16
+	Version  :  2.4.7
+	Modified :  2017-06-28
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -302,7 +302,7 @@ Function WarmUp() {
 
 	# Loop per WOPI
 	$wopis = Get-SPWOPIBinding | Select-Object ServerName -Unique
-	foreach ($w in $wopis) {
+	foreach ($w in $wopis.ServerName) {
 		foreach ($r in $remoteuis) {
 			NavigateTo "http://$w/$r/RemoteUIs.ashx"
 			NavigateTo "https://$w/$r/RemoteUIs.ashx"
@@ -404,7 +404,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.6  (last updated 2017-06-16)`n------`n"
+WriteLog "SPBestWarmUp v2.4.7  (last updated 2017-06-28)`n------`n"
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
