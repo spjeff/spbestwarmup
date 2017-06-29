@@ -60,8 +60,8 @@
 	Author   :  Hagen Deike - @hd_ka
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
-	Version  :  2.4.7
-	Modified :  2017-06-28
+	Version  :  2.4.8
+	Modified :  2017-06-29
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -140,7 +140,7 @@ Function Installer() {
 	if ($allsites) {$suffix += " -allsites"}
 	if ($skipsubwebs) {$suffix += " -skipsubwebs"}
 	if ($skiplog) {$suffix += " -skiplog"}
-	$cmd = "-ExecutionPolicy Bypass ""$cmdpath$suffix"""
+	$cmd = "-ExecutionPolicy Bypass -File SPBestWarmup.ps1" + $suffix
 	
 	# Target machines
 	$machines = @()
@@ -171,6 +171,7 @@ Function Installer() {
 			$xml = [xml](Get-Content $xmlCmdPath)
 			$xml.Task.Principals.Principal.UserId = $user
 			$xml.Task.Actions.Exec.Arguments = $cmd
+			$xml.Task.Actions.Exec.WorkingDirectory = $PSScriptRoot
 			$xml.Save($xmlCmdPath)
 
 			# Copy local file to remote UNC path machine
@@ -404,7 +405,7 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.7  (last updated 2017-06-28)`n------`n"
+WriteLog "SPBestWarmUp v2.4.8  (last updated 2017-06-29)`n------`n"
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
