@@ -60,6 +60,7 @@
 	Author   :  Hagen Deike - @hd_ka
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
+	Author   :  Leon Lennaerts - SPLeon
 	Version  :  2.4.8
 	Modified :  2017-06-29
 
