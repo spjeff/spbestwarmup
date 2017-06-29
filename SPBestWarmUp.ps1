@@ -61,7 +61,7 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.8
+	Version  :  2.4.9
 	Modified :  2017-06-29
 
 .LINK
@@ -161,7 +161,7 @@ Function Installer() {
 			schtasks /s $_ /delete /tn "SPBestWarmUp" /f
 			WriteLog "  [OK]" Green
 		} else {
-			$xmlCmdPath = $cmdPath.Replace(".ps1", ".xml")
+			$xmlCmdPath = $cmdpath.Replace(".ps1", ".xml")
 			# Ensure that XML file is present
 			if(!(Test-Path $xmlCmdPath)) {
 				Write-Warning """$($xmlCmdPath)"" is missing. Cannot create timer job without missing file."
@@ -172,7 +172,7 @@ Function Installer() {
 			$xml = [xml](Get-Content $xmlCmdPath)
 			$xml.Task.Principals.Principal.UserId = $user
 			$xml.Task.Actions.Exec.Arguments = $cmd
-			$xml.Task.Actions.Exec.WorkingDirectory = $PSScriptRoot
+			$xml.Task.Actions.Exec.WorkingDirectory = $cmdpath
 			$xml.Save($xmlCmdPath)
 
 			# Copy local file to remote UNC path machine
@@ -406,7 +406,8 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.8  (last updated 2017-06-29)`n------`n"
+WriteLog "SPBestWarmUp v2.4.9  (last updated 2017-06-29)`n------`n"
+$cmdpath = $MyInvocation.MyCommand.Path
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -418,7 +419,6 @@ if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Prin
         Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
 
         # Task Scheduler
-        $cmdpath = $MyInvocation.MyCommand.Path
         $tasks = schtasks /query /fo csv | ConvertFrom-Csv
         $spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
         if (!$spb -and !$install -and !$installfarm) {
