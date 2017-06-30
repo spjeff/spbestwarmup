@@ -61,7 +61,7 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.10
+	Version  :  2.4.11
 	Modified :  2017-06-30
 
 .LINK
@@ -172,7 +172,7 @@ Function Installer() {
 			$xml = [xml](Get-Content $xmlCmdPath)
 			$xml.Task.Principals.Principal.UserId = $user
 			$xml.Task.Actions.Exec.Arguments = $cmd
-			$xml.Task.Actions.Exec.WorkingDirectory = $cmdpath
+			$xml.Task.Actions.Exec.WorkingDirectory = Split-Path ($cmdpath)
 			$xml.Save($xmlCmdPath)
 
 			# Copy local file to remote UNC path machine
@@ -406,8 +406,8 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.10  (last updated 2017-06-30)`n------`n"
-$cmdpath = Split-Path ($MyInvocation.MyCommand.Path)
+WriteLog "SPBestWarmUp v2.4.11  (last updated 2017-06-30)`n------`n"
+$cmdpath = $MyInvocation.MyCommand.Path
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
