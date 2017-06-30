@@ -61,8 +61,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.9
-	Modified :  2017-06-29
+	Version  :  2.4.10
+	Modified :  2017-06-30
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -406,8 +406,8 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.9  (last updated 2017-06-29)`n------`n"
-$cmdpath = $MyInvocation.MyCommand.Path
+WriteLog "SPBestWarmUp v2.4.10  (last updated 2017-06-30)`n------`n"
+$cmdpath = Split-Path ($MyInvocation.MyCommand.Path)
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
