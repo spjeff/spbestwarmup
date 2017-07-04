@@ -61,8 +61,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.11
-	Modified :  2017-06-30
+	Version  :  2.4.12
+	Modified :  2017-07-34
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -406,8 +406,11 @@ Function SaveLog($id, $txt, $error) {
 
 # Main
 CreateLog
-WriteLog "SPBestWarmUp v2.4.11  (last updated 2017-06-30)`n------`n"
-$cmdpath = $MyInvocation.MyCommand.Path
+$cmdpath = (Resolve-Path .\).Path
+$ver = $PSVersionTable.PSVersion
+WriteLog "SPBestWarmUp v2.4.12  (last updated 2017-07-04)`n------`n"
+WriteLog "Path: $cmdpath"
+WriteLog "PowerShell Version: $ver"
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
