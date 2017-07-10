@@ -61,8 +61,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.12
-	Modified :  2017-07-34
+	Version  :  2.4.13
+	Modified :  2017-07-10
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -169,6 +169,7 @@ Function Installer() {
 			}
 
 			# Update xml file
+			Write-Host "xmlCmdPath - $xmlCmdPath"
 			$xml = [xml](Get-Content $xmlCmdPath)
 			$xml.Task.Principals.Principal.UserId = $user
 			$xml.Task.Actions.Exec.Arguments = $cmd
@@ -407,8 +408,9 @@ Function SaveLog($id, $txt, $error) {
 # Main
 CreateLog
 $cmdpath = (Resolve-Path .\).Path
+$cmdpath += "\SPBestWarmUp.ps1"
 $ver = $PSVersionTable.PSVersion
-WriteLog "SPBestWarmUp v2.4.12  (last updated 2017-07-04)`n------`n"
+WriteLog "SPBestWarmUp v2.4.13  (last updated 2017-07-10)`n------`n"
 WriteLog "Path: $cmdpath"
 WriteLog "PowerShell Version: $ver"
 
