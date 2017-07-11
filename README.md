@@ -21,11 +21,11 @@ I used several different warmup scripts. All worked OK but each seemed to lack f
 * Excellent blog post by [@hd_ka](https://twitter.com/hd_ka) at [http://blog.greenbrain.de/2014/10/fire-up-those-caches.html](http://blog.greenbrain.de/2014/10/fire-up-those-caches.html)
 
 ## Quick Start
-* Download `SPBestWarmup.ps1`
-* Copy `SPBestWarmup.ps1` to one SharePoint web front end (WFE)
-* Run `SPBestWarmup.ps1 -f` to install farm wide. Creates Task Scheduler job on every machine.
-* Run `SPBestWarmup.ps1 -i` to install locally. Creates Task Scheduler job on the local machine.
-* Run `SPBestWarmup.ps1 -u` to uninstall farm wide. Deletes any Task Scheduler job named "SPBestWarmup"
+* Download `SPBestWarmUp.ps1`
+* Copy `SPBestWarmUp.ps1` to one SharePoint web front end (WFE)
+* Run `SPBestWarmUp.ps1 -f` to install farm wide. Creates Task Scheduler job on every machine.
+* Run `SPBestWarmUp.ps1 -i` to install locally. Creates Task Scheduler job on the local machine.
+* Run `SPBestWarmUp.ps1 -u` to uninstall farm wide. Deletes any Task Scheduler job named "SPBestWarmup"
 * Sit back and enjoy!
 
 ## Screenshots
@@ -41,7 +41,7 @@ I used several different warmup scripts. All worked OK but each seemed to lack f
 
 ## Admin Tip
 * After reboot run this command to manually trigger the job and warm up IIS
-`SCHTASKS /RUN /TN "SPBestWarmup"`
+`SCHTASKS /RUN /TN "SPBestWarmUp"`
 
 ## Custom URLs
 * Use the `-url` paramter to add custom URLs from the command line. 
