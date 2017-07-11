@@ -61,8 +61,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.13
-	Modified :  2017-07-10
+	Version  :  2.4.14
+	Modified :  2017-07-11
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -141,7 +141,7 @@ Function Installer() {
 	if ($allsites) {$suffix += " -allsites"}
 	if ($skipsubwebs) {$suffix += " -skipsubwebs"}
 	if ($skiplog) {$suffix += " -skiplog"}
-	$cmd = "-ExecutionPolicy Bypass -File SPBestWarmup.ps1" + $suffix
+	$cmd = "-ExecutionPolicy Bypass -File SPBestWarmUp.ps1" + $suffix
 	
 	# Target machines
 	$machines = @()
@@ -410,7 +410,7 @@ CreateLog
 $cmdpath = (Resolve-Path .\).Path
 $cmdpath += "\SPBestWarmUp.ps1"
 $ver = $PSVersionTable.PSVersion
-WriteLog "SPBestWarmUp v2.4.13  (last updated 2017-07-10)`n------`n"
+WriteLog "SPBestWarmUp v2.4.14  (last updated 2017-07-11)`n------`n"
 WriteLog "Path: $cmdpath"
 WriteLog "PowerShell Version: $ver"
 
