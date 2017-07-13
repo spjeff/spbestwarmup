@@ -61,8 +61,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.14
-	Modified :  2017-07-11
+	Version  :  2.4.15
+	Modified :  2017-07-13
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -173,7 +173,7 @@ Function Installer() {
 			$xml = [xml](Get-Content $xmlCmdPath)
 			$xml.Task.Principals.Principal.UserId = $user
 			$xml.Task.Actions.Exec.Arguments = $cmd
-			$xml.Task.Actions.Exec.WorkingDirectory = Split-Path ($cmdpath)
+			$xml.Task.Actions.Exec.WorkingDirectory = Split-Path ($xmlCmdPath)
 			$xml.Save($xmlCmdPath)
 
 			# Copy local file to remote UNC path machine
@@ -410,7 +410,7 @@ CreateLog
 $cmdpath = (Resolve-Path .\).Path
 $cmdpath += "\SPBestWarmUp.ps1"
 $ver = $PSVersionTable.PSVersion
-WriteLog "SPBestWarmUp v2.4.14  (last updated 2017-07-11)`n------`n"
+WriteLog "SPBestWarmUp v2.4.15  (last updated 2017-07-13)`n------`n"
 WriteLog "Path: $cmdpath"
 WriteLog "PowerShell Version: $ver"
 
