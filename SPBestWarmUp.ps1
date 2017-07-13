@@ -222,7 +222,7 @@ Function WarmUp() {
 			NavigateTo $url"_layouts/viewlsts.aspx"
 			NavigateTo $url"_vti_bin/UserProfileService.asmx"
 			NavigateTo $url"_vti_bin/sts/spsecuritytokenservice.svc"
-			NavigateTo $url"/_api/search/query?querytext='warmup'"
+			NavigateTo $url"_api/search/query?querytext='warmup'"
 		}
 		
 		# Warm Up Individual Site Collections and Sites
