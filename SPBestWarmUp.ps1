@@ -61,8 +61,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.16
-	Modified :  2017-07-13
+	Version  :  2.4.17
+	Modified :  2017-10-30
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -220,9 +220,21 @@ Function WarmUp() {
 			NavigateTo $url"_api/web"
 			NavigateTo $url"_api/_trust" # for ADFS, first user login
 			NavigateTo $url"_layouts/viewlsts.aspx"
+			NavigateTo $url"_layouts/settings.aspx"
 			NavigateTo $url"_vti_bin/UserProfileService.asmx"
 			NavigateTo $url"_vti_bin/sts/spsecuritytokenservice.svc"
 			NavigateTo $url"_api/search/query?querytext='warmup'"
+
+			# SharePoint 2016
+			NavigateTo $url"_layouts/15/fonts/shellicons.eot"
+			NavigateTo $url"_layouts/15/jsgrid.js"
+			NavigateTo $url"_layouts/15/sp.js"
+			NavigateTo $url"_layouts/15/sp.ribbon.js"
+			NavigateTo $url"_layouts/15/core.js"
+			NavigateTo $url"_layouts/15/init.js"
+			NavigateTo $url"_layouts/15/cui.js"
+			NavigateTo $url"_layouts/15/inplview.js"
+			NavigateTo $url"_layouts/15/suitenav.js"
 		}
 		
 		# Warm Up Individual Site Collections and Sites
@@ -247,13 +259,26 @@ Function WarmUp() {
 		
         # Central Admin
         if ($wa.IsAdministrationWebApplication) {
-            $url = $wa.Url
+			$url = $wa.Url
+			# Specific pages
             NavigateTo $url"Lists/HealthReports/AllItems.aspx"
             NavigateTo $url"_admin/FarmServers.aspx"
             NavigateTo $url"_admin/Server.aspx"
             NavigateTo $url"_admin/WebApplicationList.aspx"
-            NavigateTo $url"_admin/ServiceApplications.aspx"
+			NavigateTo $url"_admin/ServiceApplications.aspx"
 			
+			# Quick launch top links
+			NavigateTo $url"applications.aspx"
+			NavigateTo $url"systemsettings.aspx"
+			NavigateTo $url"monitoring.aspx"
+			NavigateTo $url"backups.aspx"
+			NavigateTo $url"security.aspx"
+			NavigateTo $url"security.aspx"
+			NavigateTo $url"upgradeandmigration.aspx"
+			NavigateTo $url"apps.aspx"
+			NavigateTo $url"office365configuration.aspx"
+			NavigateTo $url"generalapplicationsettings.aspx"
+
             # Manage Service Application
             $sa = Get-SPServiceApplication
             $links = $sa | ForEach-Object {$_.ManageLink.Url} | Select-Object -Unique
@@ -410,7 +435,7 @@ CreateLog
 $cmdpath = (Resolve-Path .\).Path
 $cmdpath += "\SPBestWarmUp.ps1"
 $ver = $PSVersionTable.PSVersion
-WriteLog "SPBestWarmUp v2.4.16  (last updated 2017-07-13)`n------`n"
+WriteLog "SPBestWarmUp v2.4.17  (last updated 2017-10-30)`n------`n"
 WriteLog "Path: $cmdpath"
 WriteLog "PowerShell Version: $ver"
 
