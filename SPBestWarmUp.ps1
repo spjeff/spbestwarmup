@@ -61,8 +61,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.17
-	Modified :  2017-10-30
+	Version  :  2.4.18
+	Modified :  2018-02-20
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -107,9 +107,13 @@ param (
 	[Alias("sac")]
 	[switch]$skipadmincheck,
 
-	[Parameter(Mandatory=$False, Position=9, ValueFromPipeline=$false, HelpMessage='Use -skipserviceapps -ssa parameter to skip warmin up of Service Application Endpoints URLs')]
+	[Parameter(Mandatory=$False, Position=9, ValueFromPipeline=$false, HelpMessage='Use -skipserviceapps -ssa parameter to skip warming up of Service Application Endpoints URLs')]
 	[Alias("ssa")]
-	[switch]$skipserviceapps
+	[switch]$skipserviceapps,
+
+	[Parameter(Mandatory=$False, Position=10, ValueFromPipeline=$false, HelpMessage='Use -skipprogress -sp parameter to skip display of progres bar.  Faster execution for background scheduling.')]
+	[Alias("sp")]
+	[switch]$skipprogress
 )
 
 Function Installer() {
@@ -141,6 +145,7 @@ Function Installer() {
 	if ($allsites) {$suffix += " -allsites"}
 	if ($skipsubwebs) {$suffix += " -skipsubwebs"}
 	if ($skiplog) {$suffix += " -skiplog"}
+	if ($skipprogress) {$suffix += " -skipprogress"}
 	$cmd = "-ExecutionPolicy Bypass -File SPBestWarmUp.ps1" + $suffix
 	
 	# Target machines
@@ -381,15 +386,19 @@ Function FetchResources($baseUrl, $resources) {
             $fetchUrl = $rootUrl + $resUrl
         }
 
-        # Progress
-        Write-Progress -Activity "Opening " -Status $fetchUrl -PercentComplete (($counter/$resources.Count)*100)
-        $counter++
+		# Progress
+		if (!$skipprogress) {
+        	Write-Progress -Activity "Opening " -Status $fetchUrl -PercentComplete (($counter/$resources.Count)*100)
+			$counter++
+		}
 		
         # Execute
         Invoke-WebRequest -UseDefaultCredentials -UseBasicParsing -Uri $fetchUrl -TimeoutSec 120 | Out-Null
         Write-Host "." -NoNewLine
-    }
-    Write-Progress -Activity "Completed" -Completed
+	}
+	if (!$skipprogress) {
+		Write-Progress -Activity "Completed" -Completed
+	}
 }
 
 Function ShowW3WP() {
@@ -435,7 +444,7 @@ CreateLog
 $cmdpath = (Resolve-Path .\).Path
 $cmdpath += "\SPBestWarmUp.ps1"
 $ver = $PSVersionTable.PSVersion
-WriteLog "SPBestWarmUp v2.4.17  (last updated 2017-10-30)`n------`n"
+WriteLog "SPBestWarmUp v2.4.18  (last updated 2018-02-20)`n------`n"
 WriteLog "Path: $cmdpath"
 WriteLog "PowerShell Version: $ver"
 
