@@ -61,8 +61,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.18
-	Modified :  2018-02-20
+	Version  :  2.4.19
+	Modified :  2018-02-21
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -444,9 +444,14 @@ CreateLog
 $cmdpath = (Resolve-Path .\).Path
 $cmdpath += "\SPBestWarmUp.ps1"
 $ver = $PSVersionTable.PSVersion
-WriteLog "SPBestWarmUp v2.4.18  (last updated 2018-02-20)`n------`n"
+WriteLog "SPBestWarmUp v2.4.19  (last updated 2018-02-21)`n------`n"
 WriteLog "Path: $cmdpath"
 WriteLog "PowerShell Version: $ver"
+
+# Suppress progress bar display
+if ($skipprogress) {
+	$ProgressPreference = 'SilentlyContinue'
+}
 
 # Check Permission Level
 if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
