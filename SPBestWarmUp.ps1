@@ -11,7 +11,7 @@
 	A collection of url that will be added to the list of websites the script will fetch.
 	
 .PARAMETER install
-	Typing "SPBestWarmUp.ps1 -install" will create a local Task Scheduler job under credentials of the current user. Job runs every 60 minutes on the hour to help automatically populate cache. Keeps cache full even after IIS daily recycle, WSP deployment, reboot, or other system events.
+	Typing "SPBestWarmUp.ps1 -install" will create a local machine Task Scheduler job under credentials of the current user. Job runs every 60 minutes on the hour to help automatically populate cache. Keeps cache full even after IIS daily recycle, WSP deployment, reboot, or other system events.
 
 .PARAMETER installfarm
 	Typing "SPBestWarmUp.ps1 -installfarm" will create a Task Scheduler job on all machines in the farm.
@@ -22,11 +22,14 @@
 .PARAMETER user
 	Typing "SPBestWarmUp.ps1 -user" provides the user name that will be used for the execution of the Task Scheduler job. If this parameter is missing it is assumed that the Task Scheduler job will be run with the current user.
 	
-.PARAMETER skiplog
-	Typing "SPBestWarmUp.ps1 -skiplog" will avoid writing to the EventLog.
-	
 .PARAMETER allsites
 	Typing "SPBestWarmUp.ps1 -allsites" will load every site and web URL. If the parameter skipsubwebs is used, only the root web of each site collection will be processed.
+
+.PARAMETER transcript
+	Typing "SPBestWarmUp.ps1 -transcript" will generate a full PowerShell text transcript of the script exeuction.  Helpful for debug.
+
+.PARAMETER skiplog
+	Typing "SPBestWarmUp.ps1 -skiplog" will avoid writing to the EventLog	
 
 .PARAMETER skipsubwebs
 	Typing "SPBestWarmUp.ps1 -skipsubwebs" will skip the subwebs of each site collection and only process the root web of the site collection.
@@ -61,7 +64,7 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.20
+	Version  :  2.4.21
 	Modified :  2018-02-26
 
 .LINK
@@ -113,7 +116,11 @@ param (
 
     [Parameter(Mandatory = $False, Position = 10, ValueFromPipeline = $false, HelpMessage = 'Use -skipprogress -sp parameter to skip display of progres bar.  Faster execution for background scheduling.')]
     [Alias("sp")]
-    [switch]$skipprogress
+    [switch]$skipprogress,
+
+    [Parameter(Mandatory = $False, Position = 11, ValueFromPipeline = $false, HelpMessage = 'Use -transcript -t parameter to generate full PowerShell transcript.  Helpful for debug.')]
+    [Alias("t")]
+    [switch]$transcript   
 )
 
 Function Installer() {
@@ -452,11 +459,20 @@ Function SaveLog($id, $txt, $error) {
 }
 
 # Main
+
+# Transcript
+if ($transcript) {
+    $startTime = (Get-Date)
+    $datestamp = $startTime.ToString("yyyy-MM-dd-hh-mm-ss")
+    Start-Transcript "SPBestWarmup-$datestamp.log"
+}
+
+# Log
 CreateLog
 $cmdpath = (Resolve-Path .\).Path
 $cmdpath += "\SPBestWarmUp.ps1"
 $ver = $PSVersionTable.PSVersion
-WriteLog "SPBestWarmUp v2.4.20  (last updated 2018-02-26)`n------`n"
+WriteLog "SPBestWarmUp v2.4.21  (last updated 2018-02-26)`n------`n"
 WriteLog "Path: $cmdpath"
 WriteLog "PowerShell Version: $ver"
 
@@ -521,5 +537,10 @@ else {
     }
     catch {
         SaveLog 101 "ERROR" $_.Exception
+    }
+
+    # Transcript
+    if ($transcript) {
+        Stop-Transcript
     }
 }
