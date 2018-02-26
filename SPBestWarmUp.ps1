@@ -484,6 +484,7 @@ else {
         if ($install -or $installfarm -or $uninstall) {
             Installer
             SaveLog 2 "Installed to Task Scheduler"
+            break
         }
         if ($uninstall) {
             break
