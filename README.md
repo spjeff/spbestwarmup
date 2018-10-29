@@ -23,6 +23,7 @@ I used several different warmup scripts. All worked OK but each seemed to lack f
 ## Quick Start
 * Download `SPBestWarmUp.ps1`
 * Copy `SPBestWarmUp.ps1` to one SharePoint web front end (WFE)
+* (Optionnally) Run the following powershell command to avoid error on the next command : Set-ExecutionPolicy -ExecutionPolicy ByPass
 * Run `SPBestWarmUp.ps1 -f` to install farm wide. Creates Task Scheduler job on every machine.
 * Run `SPBestWarmUp.ps1 -i` to install locally. Creates Task Scheduler job on the local machine.
 * Run `SPBestWarmUp.ps1 -u` to uninstall farm wide. Deletes any Task Scheduler job named "SPBestWarmup"
