@@ -153,7 +153,7 @@ Function Installer() {
     if ($skipsubwebs) {$suffix += " -skipsubwebs"}
     if ($skiplog) {$suffix += " -skiplog"}
     if ($skipprogress) {$suffix += " -skipprogress"}
-    $cmd = "-ExecutionPolicy Bypass -File SPBestWarmUp.ps1" + $suffix
+    $cmd = '-ExecutionPolicy Bypass -File "' + $cmdpath + '"' + $suffix
 	
     # Target machines
     $machines = @()
