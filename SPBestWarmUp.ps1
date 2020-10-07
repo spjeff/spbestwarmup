@@ -3,7 +3,7 @@
 	Warm up SharePoint IIS W3WP memory cache by loading pages from WebRequest
 
 .DESCRIPTION
-	Loads the full page so resources like CSS, JS, and images are included. Please modify lines 374-395 to suit your portal content design (popular URLs, custom pages, etc.)
+	Loads the full page so resources like CSS, JS, and images are included. Please modify lines 350-368 to suit your portal content design (popular URLs, custom pages, etc.)
 	
 	Comments and suggestions always welcome!  Please, use the issues panel at the project page.
 
