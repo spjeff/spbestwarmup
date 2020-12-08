@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 	Warm up SharePoint IIS W3WP memory cache by loading pages from WebRequest
 
@@ -71,6 +71,7 @@
 	https://github.com/spjeff/spbestwarmup
 #>
 
+
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $False, Position = 0, ValueFromPipeline = $false, HelpMessage = 'A collection of URLs that will be fetched too')]
@@ -130,23 +131,25 @@ Function Installer() {
         $user = $ENV:USERDOMAIN + "\" + $ENV:USERNAME
     }
     Write-Output "  User for Task Scheduler job: $user"
-	
-    # Attempt to detect password from IIS Pool (if current user is local admin and farm account)
-    $appPools = Get-WMIObject -Namespace "root/MicrosoftIISv2" -Class "IIsApplicationPoolSetting" | Select-Object WAMUserName, WAMUserPass
-    foreach ($pool in $appPools) {			
-        if ($pool.WAMUserName -like $user) {
-            $pass = $pool.WAMUserPass
-            if ($pass) {
-                break
+
+    try {
+        # Attempt to detect password from IIS Pool (if current user is local admin and farm account)
+        $appPools = Get-WMIObject -Namespace "root/MicrosoftIISv2" -Class "IIsApplicationPoolSetting" -ErrorAction SilentlyContinue | Select-Object WAMUserName, WAMUserPass
+        foreach ($pool in $appPools) {			
+            if ($pool.WAMUserName -like $user) {
+                $pass = $pool.WAMUserPass
+                if ($pass) {
+                    break
+                }
             }
         }
-    }
-	
-    # Manual input if auto detect failed
-    if (!$pass) {
-        $pass = Read-Host "Enter password for $user "
-    }
-	
+	}
+    catch {
+        # Manual input if auto detect failed
+        if (!$pass) {
+            $pass = Read-Host "Enter password for $user "
+        }
+	}
     # Task Scheduler command
     $suffix += " -skipadmincheck"	#We do not need administrative rights on local machines to check the farm
     if ($allsites) {$suffix += " -allsites"}
