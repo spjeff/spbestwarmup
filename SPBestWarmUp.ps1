@@ -64,8 +64,8 @@
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts - SPLeon
-	Version  :  2.4.21
-	Modified :  2018-02-26
+	Version  :  2.4.22
+	Modified :  2020-12-22
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -536,7 +536,7 @@ Function ShowW3WP() {
 
 Function CreateLog() {
     # EventLog - create source if missing
-    if (!(Get-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue)) {
+    if (!(Get-EventLog -LogName Application -Source "SPBestWarmUp" -Newest 1 -ErrorAction SilentlyContinue)) {
         New-EventLog -LogName Application -Source "SPBestWarmUp" -ErrorAction SilentlyContinue | Out-Null
     }
 }
@@ -578,6 +578,7 @@ if ($transcript) {
 }
 
 # Log
+$global:msg = ""
 CreateLog
 $cmdpath = (Resolve-Path .\).Path
 $cmdpath += "\SPBestWarmUp.ps1"
