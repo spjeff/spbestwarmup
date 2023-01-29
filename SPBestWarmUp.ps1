@@ -63,9 +63,10 @@
 	Author   :  Hagen Deike - @hd_ka
 	Author   :  Lars Fernhomberg
 	Author   :  Charles Crossan - @crossan007
-	Author   :  Leon Lennaerts - SPLeon
+	Author   :  Leon Lennaerts
+    Author   :  Dan Rullo
 	Version  :  2.4.22
-	Modified :  2020-12-22
+	Modified :  2023-01-29
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -123,29 +124,6 @@ param (
     [Alias("t")]
     [switch]$transcript   
 )
-
-function LoadSharePointPS {
-    #loads PS either for SP20xx/SP SE
-	[CmdletBinding()]
-	Param ()
-	Process {
-        try {
-            $usless = Import-Module SharePointServer -ErrorAction Stop *>$null
-        }
-        Catch {
-            #failed load module revert to snap in
-            Write-Host "Warning: unable to load module, reverting to Snap-in"
-            If ( $null -eq (Get-PSSnapIn -Name Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue) ) {
-                Try { 
-                    Add-PSSnapIn -Name Microsoft.SharePoint.PowerShell -ErrorAction Stop
-                }
-                catch {
-                    write-host "ERROR: Unable to load SharePoint Snap-in"
-                }
-            }  
-        }
-	}
-}
 
 Function Installer() {
     # Add to Task Scheduler
@@ -357,7 +335,7 @@ Function Installer() {
 
 Function WarmUp() {
     # Load plugin
-    LoadSharePointPS
+    Add-PSSnapIn Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
 
     # Warm up CMD parameter URLs
     $cmdurl | ForEach-Object {NavigateTo $_}
@@ -446,7 +424,10 @@ Function WarmUp() {
 	
     # Warm up Service Applications
     if (!$skipserviceapps) {
-        Get-SPServiceApplication | ForEach-Object {$_.EndPoints | ForEach-Object {$_.ListenUris | ForEach-Object {NavigateTo $_.AbsoluteUri}}}
+        Get-SPServiceApplication | ForEach-Object {$_.EndPoints | ForEach-Object {$_.ListenUris | ForEach-Object {
+            $uri = $_.AbsoluteUri -Replace "/https$",$null -Replace "/http$",$null -Replace "/secure$",$null -Replace "/optimized$",$null
+            NavigateTo $uri
+        }}}
     }
 
     # Warm up Project Server
@@ -491,15 +472,15 @@ Function WarmUp() {
             NavigateTo "https://$w/$r/RemoteUIs.ashx"
         }
         foreach ($s in $services) {
-            NavigateTo "http://$w"+":809/$s/"
-            NavigateTo "https://$w"+":810/$s/"
+            NavigateTo ("http://$w"+":809/$s/")
+            NavigateTo ("https://$w"+":810/$s/")
         }
     }
 }
 
 Function NavigateTo([string] $url) {
     if ($url.ToUpper().StartsWith("HTTP") -and !$url.EndsWith("/ProfileService.svc", "CurrentCultureIgnoreCase")) {
-        WriteLog "  $url" -NoNewLine
+        WriteLog "  $url"
         # WebRequest command line
         try {
             $wr = Invoke-WebRequest -Uri $url -UseBasicParsing -UseDefaultCredentials -TimeoutSec 120
@@ -626,7 +607,7 @@ if (!$skipadmincheck -and !([Security.Principal.WindowsPrincipal] [Security.Prin
 else {
     try {
         # SharePoint cmdlets
-        LoadSharePointPS
+        Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue | Out-Null
 
         # Task Scheduler
         $tasks = schtasks /query /fo csv | ConvertFrom-Csv
