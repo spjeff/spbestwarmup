@@ -65,8 +65,7 @@
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts
     Author   :  Dan Rullo
-	Version  :  2.4.22
-	Modified :  2023-01-29
+	Modified :  2023-02-01
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -424,10 +423,14 @@ Function WarmUp() {
 	
     # Warm up Service Applications
     if (!$skipserviceapps) {
-        Get-SPServiceApplication | ForEach-Object {$_.EndPoints | ForEach-Object {$_.ListenUris | ForEach-Object {
-            $uri = $_.AbsoluteUri -Replace "/https$",$null -Replace "/http$",$null -Replace "/secure$",$null -Replace "/optimized$",$null
-            NavigateTo $uri
-        }}}
+        Get-SPServiceApplication | ForEach-Object {
+            $_.EndPoints | ForEach-Object {
+                $_.ListenUris | ForEach-Object {
+                    $uri = $_.AbsoluteUri -Replace "/https$",$null -Replace "/http$",$null -Replace "/secure$",$null -Replace "/optimized$",$null
+                    NavigateTo $uri
+                }
+            }
+        }
     }
 
     # Warm up Project Server
@@ -436,7 +439,7 @@ Function WarmUp() {
         Get-SPProjectWebInstance | ForEach-Object {
             # Thanks to Eugene Pavlikov for the snippet
             $url = ($_.Url).AbsoluteUri + "/"
-		
+        
             NavigateTo $url
             NavigateTo ($url + "_layouts/viewlsts.aspx")
             NavigateTo ($url + "_vti_bin/UserProfileService.asmx")
@@ -452,7 +455,7 @@ Function WarmUp() {
 
     # Warm up Topology
     NavigateTo "http://localhost:32843/Topology/topology.svc"
-	
+    
     # Warm up Host Name Site Collections (HNSC)
     Write-Output "Opening Host Name Site Collections (HNSC)..."
     $hnsc = Get-SPSite -Limit All | Where-Object {$_.HostHeaderIsSiteName -eq $true} | Select-Object Url
@@ -472,8 +475,8 @@ Function WarmUp() {
             NavigateTo "https://$w/$r/RemoteUIs.ashx"
         }
         foreach ($s in $services) {
-            NavigateTo ("http://$w"+":809/$s/")
-            NavigateTo ("https://$w"+":810/$s/")
+            NavigateTo ("http://$w"+":809/$s")
+            NavigateTo ("https://$w"+":810/$s") 
         }
     }
 }
