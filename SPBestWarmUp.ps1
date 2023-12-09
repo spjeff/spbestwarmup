@@ -55,7 +55,6 @@
 .EXAMPLE
 	.\SPBestWarmUp.ps1 -u
 	.\SPBestWarmUp.ps1 -uninstall
-
 	
 .NOTES  
 	File Name:  SPBestWarmUp.ps1
@@ -65,7 +64,7 @@
 	Author   :  Charles Crossan - @crossan007
 	Author   :  Leon Lennaerts
     Author   :  Dan Rullo
-	Modified :  2023-02-01
+	Modified :  2023-12-09
 
 .LINK
 	https://github.com/spjeff/spbestwarmup
@@ -143,26 +142,26 @@ Function Installer() {
                 }
             }
         }
-	}
+    }
     catch {
         # Manual input if auto detect failed
         if (!$pass) {
             $pass = Read-Host "Enter password for $user "
         }
-	}
+    }
     # Task Scheduler command
     $suffix += " -skipadmincheck"	#We do not need administrative rights on local machines to check the farm
-    if ($allsites) {$suffix += " -allsites"}
-    if ($skipsubwebs) {$suffix += " -skipsubwebs"}
-    if ($skiplog) {$suffix += " -skiplog"}
-    if ($skipprogress) {$suffix += " -skipprogress"}
+    if ($allsites) { $suffix += " -allsites" }
+    if ($skipsubwebs) { $suffix += " -skipsubwebs" }
+    if ($skiplog) { $suffix += " -skiplog" }
+    if ($skipprogress) { $suffix += " -skipprogress" }
     $cmd = '-ExecutionPolicy Bypass -File "' + $cmdpath + '"' + $suffix
 	
     # Target machines
     $machines = @()
     if ($installfarm -or $uninstall) {
         # Create farm wide on remote machines
-        foreach ($srv in (Get-SPServer | Where-Object {$_.Role -ne "Invalid"})) {
+        foreach ($srv in (Get-SPServer | Where-Object { $_.Role -ne "Invalid" })) {
             $machines += $srv.Address
         }
     }
@@ -309,7 +308,7 @@ Function Installer() {
                 if ($_ -ne "localhost" -and $_ -ne $ENV:COMPUTERNAME) {
                     $dest = $cmdpath
                     $drive = $dest.substring(0, 1)
-                    $match = Get-WMIObject -Class Win32_LogicalDisk | Where-Object {$_.DeviceID -eq ($drive + ":") -and $_.DriveType -eq 3}
+                    $match = Get-WMIObject -Class Win32_LogicalDisk | Where-Object { $_.DeviceID -eq ($drive + ":") -and $_.DriveType -eq 3 }
                     if ($match) {
                         $dest = "\\" + $_ + "\" + $drive + "$" + $dest.substring(2, $dest.length - 2)
                         $xmlDest = $dest.Replace(".ps1", ".xml")
@@ -324,11 +323,12 @@ Function Installer() {
                 schtasks /s $_ /create /tn "SPBestWarmUp" /ru $user /rp $pass /xml $xmlCmdPath
                 WriteLog "  [OK]"  Green
             }
-        } catch {
-			$ErrorMessage = $_.Exception.Message
-			$FailedItem = $_.Exception.ItemName
+        }
+        catch {
+            $ErrorMessage = $_.Exception.Message
+            $FailedItem = $_.Exception.ItemName
             WriteLog "   [ERROR] $ErrorMessage $FailedItem" Yellow
-		}
+        }
     }
 }
 
@@ -337,7 +337,7 @@ Function WarmUp() {
     Add-PSSnapIn Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
 
     # Warm up CMD parameter URLs
-    $cmdurl | ForEach-Object {NavigateTo $_}
+    $cmdurl | ForEach-Object { NavigateTo $_ }
 
     # Warm up SharePoint web applications
     Write-Output "Opening Web Applications..."
@@ -350,9 +350,11 @@ Function WarmUp() {
             if (!$url.EndsWith("/")) {
                 $url = $url + "/"
             }
+
+            # SharePoint Core
             NavigateTo $url
             NavigateTo $url"_api/web"
-            NavigateTo $url"_api/_trust" # for ADFS, first user login
+            NavigateTo $url"_api/_trust"
             NavigateTo $url"_layouts/viewlsts.aspx"
             NavigateTo $url"_layouts/settings.aspx"
             NavigateTo $url"_vti_bin/UserProfileService.asmx"
@@ -413,7 +415,7 @@ Function WarmUp() {
 
             # Manage Service Application
             $sa = Get-SPServiceApplication
-            $links = $sa | ForEach-Object {$_.ManageLink.Url} | Select-Object -Unique
+            $links = $sa | ForEach-Object { $_.ManageLink.Url } | Select-Object -Unique
             foreach ($link in $links) {
                 $ml = $link.TrimStart('/')
                 NavigateTo "$url$ml"
@@ -426,7 +428,7 @@ Function WarmUp() {
         Get-SPServiceApplication | ForEach-Object {
             $_.EndPoints | ForEach-Object {
                 $_.ListenUris | ForEach-Object {
-                    $uri = $_.AbsoluteUri -Replace "/https$",$null -Replace "/http$",$null -Replace "/secure$",$null -Replace "/optimized$",$null
+                    $uri = $_.AbsoluteUri -Replace "/https$", $null -Replace "/http$", $null -Replace "/secure$", $null -Replace "/optimized$", $null
                     NavigateTo $uri
                 }
             }
@@ -455,10 +457,15 @@ Function WarmUp() {
 
     # Warm up Topology
     NavigateTo "http://localhost:32843/Topology/topology.svc"
+
+    # Custom URLs - Add your own below
+    # NavigateTo "http://portal/popularPage.aspx"
+    # NavigateTo "http://portal/popularPage2.aspx"
+    # NavigateTo "http://portal/popularPage3.aspx
     
     # Warm up Host Name Site Collections (HNSC)
     Write-Output "Opening Host Name Site Collections (HNSC)..."
-    $hnsc = Get-SPSite -Limit All | Where-Object {$_.HostHeaderIsSiteName -eq $true} | Select-Object Url
+    $hnsc = Get-SPSite -Limit All | Where-Object { $_.HostHeaderIsSiteName -eq $true } | Select-Object Url
     foreach ($sc in $hnsc) {
         NavigateTo $sc.Url
     }
@@ -475,8 +482,8 @@ Function WarmUp() {
             NavigateTo "https://$w/$r/RemoteUIs.ashx"
         }
         foreach ($s in $services) {
-            NavigateTo ("http://$w"+":809/$s")
-            NavigateTo ("https://$w"+":810/$s") 
+            NavigateTo ("http://$w" + ":809/$s")
+            NavigateTo ("https://$w" + ":810/$s") 
         }
     }
 }
@@ -561,10 +568,10 @@ Function WriteLog($text, $color) {
     }
 }
 
-Function SaveLog($id, $txt, $error) {
+Function SaveLog($id, $txt, $exception) {
     # EventLog
     if (!$skiplog) {
-        if (!$error) {
+        if (!$exception) {
             # Success
             $global:msg += $txt
             Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Information -EventId $id -Message $global:msg
@@ -572,7 +579,7 @@ Function SaveLog($id, $txt, $error) {
         else {      
             # Error
             $global:msg += "ERROR`n"
-            $global:msg += $error.Message + "`n" + $error.ItemName
+            $global:msg += $exception.Message + "`n" + $exception.ItemName
             Write-EventLog -LogName Application -Source "SPBestWarmUp" -EntryType Warning -EventId $id -Message $global:msg
         }
     }
@@ -593,7 +600,7 @@ CreateLog
 $cmdpath = (Resolve-Path .\).Path
 $cmdpath += "\SPBestWarmUp.ps1"
 $ver = $PSVersionTable.PSVersion
-WriteLog "SPBestWarmUp v2.4.21  (last updated 2018-02-26)`n------`n"
+WriteLog "SPBestWarmUp v2.4.22  (last updated 2023-12-09)`n------`n"
 WriteLog "Path: $cmdpath"
 WriteLog "PowerShell Version: $ver"
 
@@ -614,7 +621,7 @@ else {
 
         # Task Scheduler
         $tasks = schtasks /query /fo csv | ConvertFrom-Csv
-        $spb = $tasks |Where-Object {$_.TaskName -eq "\SPBestWarmUp"}
+        $spb = $tasks | Where-Object { $_.TaskName -eq "\SPBestWarmUp" }
         if (!$spb -and !$install -and !$installfarm) {
             Write-Warning "Tip: to install on Task Scheduler run the command ""SPBestWarmUp.ps1 -install"""
         }
@@ -631,29 +638,8 @@ else {
         ShowW3WP
         WarmUp
         ShowW3WP
-		
-        # Custom URLs - Add your own below
-        # Looks at Central Admin Site Title to support many farms with a single script
-        (Get-SPWebApplication -IncludeCentralAdministration) |Where-Object {$_.IsAdministrationWebApplication -eq $true} |ForEach-Object {
-            $caTitle = Get-SPWeb $_.Url | Select-Object Title
-        }
-        switch -Wildcard ($caTitle) {
-            "*PROD*" {
-                #NavigateTo "http://portal/popularPage.aspx"
-                #NavigateTo "http://portal/popularPage2.aspx"
-                #NavigateTo "http://portal/popularPage3.aspx
-            }
-            "*TEST*" {
-                #NavigateTo "http://portal/popularPage.aspx"
-                #NavigateTo "http://portal/popularPage2.aspx"
-                #NavigateTo "http://portal/popularPage3.aspx
-            }
-            default {
-                #NavigateTo "http://portal/popularPage.aspx"
-                #NavigateTo "http://portal/popularPage2.aspx"
-                #NavigateTo "http://portal/popularPage3.aspx
-            }
-        }
+
+        # Log
         SaveLog 1 "Operation completed successfully"
     }
     catch {
